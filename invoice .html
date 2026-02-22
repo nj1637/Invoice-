@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Ayurveda | Professional Billing Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        :root {
+            --ayurveda-green: #2D5A27;
+            --ayurveda-gold: #C5A059;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .bg-ayurveda { background-color: var(--ayurveda-green); }
+        .text-ayurveda { color: var(--ayurveda-green); }
+        .border-ayurveda { border-color: var(--ayurveda-green); }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 1); }
+        input:focus, select:focus { outline: none; border-color: var(--ayurveda-green); ring: 2px; ring-color: rgba(45, 90, 39, 0.2); }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <header class="bg-ayurveda text-white py-6 px-8 shadow-lg mb-8">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-2 rounded-full">
+                    <i data-lucide="leaf" class="text-ayurveda w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">DEV AYURVEDA</h1>
+                    <p class="text-xs opacity-80 uppercase tracking-widest">Billing & Analytics Dashboard</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="exportToExcel()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Data
+                </button>
+                <div id="statusIndicator" class="flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-lg">
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    <span class="text-sm font-medium">System Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-6">
+            <section class="glass-card rounded-2xl p-8 shadow-sm">
+                <div class="flex items-center gap-2 mb-6 border-b pb-4">
+                    <i data-lucide="user" class="text-ayurveda w-5 h-5"></i>
+                    <h2 class="text-lg font-bold text-slate-800">Customer Details</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Customer Name</label>
+                        <input type="text" id="custName" placeholder="Full Name" class="w-full p-3 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">GSTIN Number</label>
+                        <input type="text" id="custGst" placeholder="22AAAAA0000A1Z5" class="w-full p-3 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Mobile Number</label>
+                        <input type="tel" id="custMobile" placeholder="+91 00000 00000" class="w-full p-3 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Billing Address</label>
+                        <input type="text" id="custAddress" placeholder="City, State, ZIP" class="w-full p-3 rounded-lg border border-slate-200">
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-card rounded-2xl p-8 shadow-sm">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="package" class="text-ayurveda w-5 h-5"></i>
+                        <h2 class="text-lg font-bold text-slate-800">Products & Services</h2>
+                    </div>
+                    <button onclick="addRow()" class="flex items-center gap-2 text-sm font-bold text-ayurveda hover:bg-green-50 px-3 py-1 rounded-md transition">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Item
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left" id="productTable">
+                        <thead>
+                            <tr class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <th class="pb-4 px-2">Description</th>
+                                <th class="pb-4 px-2 w-24">Qty</th>
+                                <th class="pb-4 px-2 w-32">Price (₹)</th>
+                                <th class="pb-4 px-2 w-32">GST %</th>
+                                <th class="pb-4 px-2 w-32">Total (₹)</th>
+                                <th class="pb-4 px-2 w-12"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="productBody">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="lg:col-span-1 space-y-6">
+            <section class="glass-card rounded-2xl p-8 shadow-md sticky top-8 border-t-4 border-ayurveda">
+                <h2 class="text-xl font-bold text-slate-800 mb-6">Invoice Summary</h2>
+                
+                <div class="space-y-4 mb-8">
+                    <div class="flex justify-between text-slate-600">
+                        <span>Subtotal</span>
+                        <span id="summarySubtotal">₹ 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-slate-600 border-b pb-4">
+                        <span>Total GST</span>
+                        <span id="summaryTax">₹ 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-2xl font-bold text-slate-800 pt-2">
+                        <span>Grand Total</span>
+                        <span id="summaryGrandTotal" class="text-ayurveda">₹ 0.00</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="generateInvoice('download')" class="w-full flex justify-center items-center gap-2 bg-ayurveda text-white py-4 rounded-xl font-bold hover:opacity-90 transition shadow-lg shadow-green-900/20">
+                        <i data-lucide="download" class="w-5 h-5"></i> Download PDF
+                    </button>
+                    <button onclick="generateInvoice('print')" class="w-full flex justify-center items-center gap-2 bg-slate-800 text-white py-4 rounded-xl font-bold hover:bg-slate-900 transition">
+                        <i data-lucide="printer" class="w-5 h-5"></i> Print Invoice
+                    </button>
+                    <button onclick="resetApp()" class="w-full text-slate-400 py-2 text-sm font-medium hover:text-red-500 transition">
+                        Reset All Fields
+                    </button>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 italic text-xs text-slate-400 text-center">
+                    "Sarve Santu Niramaya" — May all be free from illness.
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Data Storage
+        let invoiceItems = [];
+        const GST_RATES = [5, 12, 18];
+
+        // Add Row Logic
+        function addRow() {
+            const tbody = document.getElementById('productBody');
+            const rowId = Date.now();
+            const tr = document.createElement('tr');
+            tr.id = `row-${rowId}`;
+            tr.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors group";
+            
+            tr.innerHTML = `
+                <td class="py-4 px-2">
+                    <input type="text" placeholder="e.g. Ashwagandha Churna" class="itemName w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700 font-medium">
+                </td>
+                <td class="py-4 px-2">
+                    <input type="number" value="1" min="1" oninput="calculateRow(${rowId})" class="itemQty w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700">
+                </td>
+                <td class="py-4 px-2">
+                    <input type="number" value="0.00" step="0.01" oninput="calculateRow(${rowId})" class="itemPrice w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700">
+                </td>
+                <td class="py-4 px-2">
+                    <select onchange="calculateRow(${rowId})" class="itemGst w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700 cursor-pointer">
+                        ${GST_RATES.map(rate => `<option value="${rate}">${rate}%</option>`).join('')}
+                    </select>
+                </td>
+                <td class="py-4 px-2">
+                    <span class="itemTotal font-bold text-slate-800">0.00</span>
+                </td>
+                <td class="py-4 px-2 text-right">
+                    <button onclick="removeRow(${rowId})" class="text-slate-300 hover:text-red-500 transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            lucide.createIcons();
+            calculateRow(rowId);
+        }
+
+        function removeRow(id) {
+            document.getElementById(`row-${id}`).remove();
+            calculateSummary();
+        }
+
+        function calculateRow(id) {
+            const row = document.getElementById(`row-${id}`);
+            const qty = parseFloat(row.querySelector('.itemQty').value) || 0;
+            const price = parseFloat(row.querySelector('.itemPrice').value) || 0;
+            const gstPercent = parseFloat(row.querySelector('.itemGst').value) || 0;
+            
+            const subtotal = qty * price;
+            const gstAmount = subtotal * (gstPercent / 100);
+            const total = subtotal + gstAmount;
+            
+            row.querySelector('.itemTotal').innerText = total.toFixed(2);
+            calculateSummary();
+        }
+
+        function calculateSummary() {
+            let subtotal = 0;
+            let totalTax = 0;
+            
+            document.querySelectorAll('#productBody tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.itemQty').value) || 0;
+                const price = parseFloat(row.querySelector('.itemPrice').value) || 0;
+                const gstPercent = parseFloat(row.querySelector('.itemGst').value) || 0;
+                
+                const lineSub = qty * price;
+                const lineTax = lineSub * (gstPercent / 100);
+                
+                subtotal += lineSub;
+                totalTax += lineTax;
+            });
+
+            document.getElementById('summarySubtotal').innerText = `₹ ${subtotal.toFixed(2)}`;
+            document.getElementById('summaryTax').innerText = `₹ ${totalTax.toFixed(2)}`;
+            document.getElementById('summaryGrandTotal').innerText = `₹ ${(subtotal + totalTax).toFixed(2)}`;
+        }
+
+        // PDF Generation Logic
+        async function generateInvoice(mode) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Branding
+            doc.setFillColor(45, 90, 39); // Ayurveda Green
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont("helvetica", "bold");
+            doc.text("DEV AYURVEDA", 15, 25);
+            doc.setFontSize(10);
+            doc.text("TAX INVOICE", 170, 25);
+
+            // Client Info
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(10);
+            doc.text("BILL TO:", 15, 55);
+            doc.setFont("helvetica", "bold");
+            doc.text(document.getElementById('custName').value || "Cash Customer", 15, 62);
+            doc.setFont("helvetica", "normal");
+            doc.text(`GSTIN: ${document.getElementById('custGst').value || 'N/A'}`, 15, 68);
+            doc.text(`Mobile: ${document.getElementById('custMobile').value || 'N/A'}`, 15, 74);
+            doc.text(`Address: ${document.getElementById('custAddress').value || 'N/A'}`, 15, 80);
+
+            // Metadata
+            const date = new Date().toLocaleDateString();
+            const invNo = "INV-" + Math.floor(1000 + Math.random() * 9000);
+            doc.text(`Date: ${date}`, 150, 62);
+            doc.text(`Invoice No: ${invNo}`, 150, 68);
+
+            // Table
+            const body = [];
+            document.querySelectorAll('#productBody tr').forEach(row => {
+                body.push([
+                    row.querySelector('.itemName').value,
+                    row.querySelector('.itemQty').value,
+                    row.querySelector('.itemPrice').value,
+                    row.querySelector('.itemGst').value + "%",
+                    row.querySelector('.itemTotal').innerText
+                ]);
+            });
+
+            doc.autoTable({
+                startY: 90,
+                head: [['Product Description', 'Qty', 'Unit Price', 'GST', 'Total (INR)']],
+                body: body,
+                headStyles: { fillColor: [45, 90, 39] },
+                theme: 'striped'
+            });
+
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFont("helvetica", "bold");
+            doc.text(`Grand Total: ${document.getElementById('summaryGrandTotal').innerText}`, 150, finalY + 10);
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "italic");
+            doc.text("Thank you for choosing Dev Ayurveda. Be healthy, be natural.", 15, finalY + 30);
+
+            if(mode === 'download') {
+                doc.save(`${invNo}_DevAyurveda.pdf`);
+            } else {
+                window.open(doc.output('bloburl'), '_blank');
+            }
+
+            // Sync simulation (Firebase logic would trigger here)
+            console.log("Syncing to Firebase...");
+        }
+
+        function exportToExcel() {
+            const data = [];
+            document.querySelectorAll('#productBody tr').forEach(row => {
+                data.push({
+                    Customer: document.getElementById('custName').value,
+                    GSTIN: document.getElementById('custGst').value,
+                    Product: row.querySelector('.itemName').value,
+                    Quantity: row.querySelector('.itemQty').value,
+                    Price: row.querySelector('.itemPrice').value,
+                    GST: row.querySelector('.itemGst').value,
+                    Total: row.querySelector('.itemTotal').innerText
+                });
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Invoices");
+            XLSX.writeFile(wb, "DevAyurveda_Report.xlsx");
+        }
+
+        function resetApp() {
+            if(confirm("Are you sure you want to clear all data?")) {
+                document.querySelectorAll('input').forEach(i => i.value = "");
+                document.getElementById('productBody').innerHTML = "";
+                addRow();
+                calculateSummary();
+            }
+        }
+
+        // Initial Row
+        window.onload = addRow;
+    </script>
+</body>
+</html>
