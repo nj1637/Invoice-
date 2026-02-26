@@ -2,335 +2,1320 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Ayurveda | Professional Billing Suite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dev Ayurveda ERP</title>
+    
+    <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        :root {
-            --ayurveda-green: #2D5A27;
-            --ayurveda-gold: #C5A059;
-        }
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .bg-ayurveda { background-color: var(--ayurveda-green); }
-        .text-ayurveda { color: var(--ayurveda-green); }
-        .border-ayurveda { border-color: var(--ayurveda-green); }
-        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 1); }
-        input:focus, select:focus { outline: none; border-color: var(--ayurveda-green); ring: 2px; ring-color: rgba(45, 90, 39, 0.2); }
-    </style>
-</head>
-<body class="min-h-screen pb-12">
-
-    <header class="bg-ayurveda text-white py-6 px-8 shadow-lg mb-8">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-white p-2 rounded-full">
-                    <i data-lucide="leaf" class="text-ayurveda w-8 h-8"></i>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight">DEV AYURVEDA</h1>
-                    <p class="text-xs opacity-80 uppercase tracking-widest">Billing & Analytics Dashboard</p>
-                </div>
-            </div>
-            <div class="flex gap-4">
-                <button onclick="exportToExcel()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition">
-                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Data
-                </button>
-                <div id="statusIndicator" class="flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-lg">
-                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                    <span class="text-sm font-medium">System Ready</span>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <div class="lg:col-span-2 space-y-6">
-            <section class="glass-card rounded-2xl p-8 shadow-sm">
-                <div class="flex items-center gap-2 mb-6 border-b pb-4">
-                    <i data-lucide="user" class="text-ayurveda w-5 h-5"></i>
-                    <h2 class="text-lg font-bold text-slate-800">Customer Details</h2>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Customer Name</label>
-                        <input type="text" id="custName" placeholder="Full Name" class="w-full p-3 rounded-lg border border-slate-200">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">GSTIN Number</label>
-                        <input type="text" id="custGst" placeholder="22AAAAA0000A1Z5" class="w-full p-3 rounded-lg border border-slate-200">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Mobile Number</label>
-                        <input type="tel" id="custMobile" placeholder="+91 00000 00000" class="w-full p-3 rounded-lg border border-slate-200">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Billing Address</label>
-                        <input type="text" id="custAddress" placeholder="City, State, ZIP" class="w-full p-3 rounded-lg border border-slate-200">
-                    </div>
-                </div>
-            </section>
-
-            <section class="glass-card rounded-2xl p-8 shadow-sm">
-                <div class="flex justify-between items-center mb-6 border-b pb-4">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="package" class="text-ayurveda w-5 h-5"></i>
-                        <h2 class="text-lg font-bold text-slate-800">Products & Services</h2>
-                    </div>
-                    <button onclick="addRow()" class="flex items-center gap-2 text-sm font-bold text-ayurveda hover:bg-green-50 px-3 py-1 rounded-md transition">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Item
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left" id="productTable">
-                        <thead>
-                            <tr class="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                <th class="pb-4 px-2">Description</th>
-                                <th class="pb-4 px-2 w-24">Qty</th>
-                                <th class="pb-4 px-2 w-32">Price (₹)</th>
-                                <th class="pb-4 px-2 w-32">GST %</th>
-                                <th class="pb-4 px-2 w-32">Total (₹)</th>
-                                <th class="pb-4 px-2 w-12"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="productBody">
-                            </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
-
-        <div class="lg:col-span-1 space-y-6">
-            <section class="glass-card rounded-2xl p-8 shadow-md sticky top-8 border-t-4 border-ayurveda">
-                <h2 class="text-xl font-bold text-slate-800 mb-6">Invoice Summary</h2>
-                
-                <div class="space-y-4 mb-8">
-                    <div class="flex justify-between text-slate-600">
-                        <span>Subtotal</span>
-                        <span id="summarySubtotal">₹ 0.00</span>
-                    </div>
-                    <div class="flex justify-between text-slate-600 border-b pb-4">
-                        <span>Total GST</span>
-                        <span id="summaryTax">₹ 0.00</span>
-                    </div>
-                    <div class="flex justify-between text-2xl font-bold text-slate-800 pt-2">
-                        <span>Grand Total</span>
-                        <span id="summaryGrandTotal" class="text-ayurveda">₹ 0.00</span>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <button onclick="generateInvoice('download')" class="w-full flex justify-center items-center gap-2 bg-ayurveda text-white py-4 rounded-xl font-bold hover:opacity-90 transition shadow-lg shadow-green-900/20">
-                        <i data-lucide="download" class="w-5 h-5"></i> Download PDF
-                    </button>
-                    <button onclick="generateInvoice('print')" class="w-full flex justify-center items-center gap-2 bg-slate-800 text-white py-4 rounded-xl font-bold hover:bg-slate-900 transition">
-                        <i data-lucide="printer" class="w-5 h-5"></i> Print Invoice
-                    </button>
-                    <button onclick="resetApp()" class="w-full text-slate-400 py-2 text-sm font-medium hover:text-red-500 transition">
-                        Reset All Fields
-                    </button>
-                </div>
-
-                <div class="mt-8 pt-6 border-t border-slate-100 italic text-xs text-slate-400 text-center">
-                    "Sarve Santu Niramaya" — May all be free from illness.
-                </div>
-            </section>
-        </div>
-    </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
-        // Initialize Icons
-        lucide.createIcons();
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' } }
+                }
+            }
+        }
+    </script>
 
-        // Data Storage
-        let invoiceItems = [];
-        const GST_RATES = [5, 12, 18];
+    <style>
+        /* Responsive scrollbars and touch optimizations */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        // Add Row Logic
-        function addRow() {
-            const tbody = document.getElementById('productBody');
-            const rowId = Date.now();
-            const tr = document.createElement('tr');
-            tr.id = `row-${rowId}`;
-            tr.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors group";
+        /* Smooth tab transitions */
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Bottom Nav active state */
+        .nav-mobile-active { color: #059669; }
+        .nav-desktop-active { background-color: #059669; color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); }
+
+        /* Ensure inputs are easy to tap on mobile */
+        input, select, button { touch-action: manipulation; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans overflow-hidden flex flex-col md:flex-row h-screen">
+
+    <!-- Desktop Sidebar (Hidden on Mobile) -->
+    <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)] shrink-0">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-10 text-emerald-800">
+                <div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><i data-lucide="box" class="w-7 h-7"></i></div>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">Dev Ayurveda</h1>
+                    <p class="text-xs text-emerald-600 font-medium">ERP System</p>
+                </div>
+            </div>
             
-            tr.innerHTML = `
-                <td class="py-4 px-2">
-                    <input type="text" placeholder="e.g. Ashwagandha Churna" class="itemName w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700 font-medium">
-                </td>
-                <td class="py-4 px-2">
-                    <input type="number" value="1" min="1" oninput="calculateRow(${rowId})" class="itemQty w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700">
-                </td>
-                <td class="py-4 px-2">
-                    <input type="number" value="0.00" step="0.01" oninput="calculateRow(${rowId})" class="itemPrice w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700">
-                </td>
-                <td class="py-4 px-2">
-                    <select onchange="calculateRow(${rowId})" class="itemGst w-full bg-transparent border-none p-0 focus:ring-0 text-slate-700 cursor-pointer">
-                        ${GST_RATES.map(rate => `<option value="${rate}">${rate}%</option>`).join('')}
-                    </select>
-                </td>
-                <td class="py-4 px-2">
-                    <span class="itemTotal font-bold text-slate-800">0.00</span>
-                </td>
-                <td class="py-4 px-2 text-right">
-                    <button onclick="removeRow(${rowId})" class="text-slate-300 hover:text-red-500 transition">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(tr);
+            <nav class="flex flex-col gap-2" id="desktop-nav">
+                <!-- Nav items injected via JS -->
+            </nav>
+        </div>
+        <div class="p-6 border-t border-slate-100">
+            <div class="text-xs text-slate-400">Secure Session</div>
+            <div class="text-xs font-mono text-slate-500 truncate mt-1" id="user-id-display">Initializing...</div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto relative pb-20 md:pb-0 scroll-smooth">
+        <div id="loading-screen" class="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center">
+            <i data-lucide="loader-2" class="w-10 h-10 text-emerald-600 animate-spin mb-4"></i>
+            <p class="text-emerald-800 font-medium">Connecting to Firebase...</p>
+        </div>
+
+        <div class="max-w-7xl mx-auto p-4 md:p-8 w-full">
+            
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="tab-content w-full">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Business Analytics Hub</h2>
+                    <p class="text-slate-500">Real-time overview of Dev Ayurveda performance.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+                    <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-6 shadow-sm border-none">
+                        <div class="text-emerald-100 text-sm font-medium mb-1">Total Verified Revenue</div>
+                        <div class="text-3xl md:text-4xl font-bold tracking-tight mb-2" id="dash-revenue">₹0.00</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3"><i data-lucide="alert-circle"></i></div>
+                        <div class="text-slate-500 text-sm font-medium">Pending Drafts</div>
+                        <div class="text-3xl font-bold text-slate-800" id="dash-drafts">0</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3"><i data-lucide="box"></i></div>
+                        <div class="text-slate-500 text-sm font-medium">Active Products</div>
+                        <div class="text-3xl font-bold text-slate-800" id="dash-products">0</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 min-h-[300px]">
+                        <h3 class="font-bold text-slate-700 mb-4">7-Day Revenue Trend</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                        <h3 class="font-bold text-slate-700 mb-4">Recent Activity</h3>
+                        <div id="dash-recent-activity" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart Invoice View -->
+            <div id="view-invoice" class="tab-content active w-full">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">New Invoice Engine</h2>
+                        <p class="text-slate-500 text-sm md:text-base">Create, calculate, and generate bills.</p>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="saveInvoice('draft')" class="flex-1 md:flex-none px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-100 transition-all"><i data-lucide="save" class="w-4 h-4"></i> Draft</button>
+                        <button onclick="saveInvoice('final')" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="check-circle" class="w-4 h-4"></i> Finalize</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form Columns -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Client Details -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5"></i> Client Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+                                <div class="col-span-1 md:col-span-2 relative">
+                                    <label class="text-sm font-medium text-slate-700 mb-1 block">Client Name (Search or Enter New)</label>
+                                    <input type="text" id="inv-client-name" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all" autocomplete="off" oninput="handleClientSearch(this.value)" onfocus="handleClientSearch(this.value)">
+                                    <div id="client-suggestions" class="hidden absolute z-30 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700 mb-1 block">Mobile Number</label>
+                                    <input type="tel" id="inv-client-mobile" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700 mb-1 block">GSTIN (Optional)</label>
+                                    <input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none">
+                                </div>
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="text-sm font-medium text-slate-700 mb-1 block">Address</label>
+                                    <input type="text" id="inv-client-address" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Line Items -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="box" class="w-5 h-5"></i> Product Line Items</h3>
+                            
+                            <div class="relative mb-6">
+                                <div class="flex items-center relative">
+                                    <i data-lucide="search" class="w-5 h-5 absolute left-3 text-emerald-600 z-10"></i>
+                                    <input type="text" id="inv-product-search" class="w-full pl-10 pr-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50 focus:bg-white focus:border-emerald-500 outline-none placeholder:text-emerald-700/50" placeholder="Search product to add..." autocomplete="off" oninput="handleProductSearch(this.value)" onfocus="handleProductSearch(this.value)">
+                                </div>
+                                <div id="product-suggestions" class="hidden absolute z-20 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
+                            </div>
+
+                            <!-- Mobile Responsive Table Wrapper -->
+                            <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100">
+                                <table class="w-full text-left text-sm min-w-[500px]">
+                                    <thead class="bg-slate-100 text-slate-600 font-medium">
+                                        <tr>
+                                            <th class="p-3">Item Name</th>
+                                            <th class="p-3 w-20">Qty</th>
+                                            <th class="p-3 w-24">Rate (₹)</th>
+                                            <th class="p-3 w-20">GST %</th>
+                                            <th class="p-3 w-24 text-right">Total (₹)</th>
+                                            <th class="p-3 w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="invoice-items-body">
+                                        <tr><td colspan="6" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Computations Column -->
+                    <div class="space-y-6">
+                        <!-- Live Summary -->
+                        <div class="bg-emerald-800 text-white rounded-2xl p-6 shadow-xl shadow-emerald-900/20">
+                            <h3 class="text-emerald-100 font-medium mb-4 flex justify-between items-center">Live Summary <span id="inv-id-display" class="text-xs opacity-70"></span></h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between"><span class="text-emerald-200">Subtotal</span><span class="font-mono" id="summary-subtotal">₹0.00</span></div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-emerald-200">Discount</span>
+                                    <div class="flex items-center gap-1 w-24 border border-emerald-700 bg-emerald-900/50 rounded overflow-hidden px-2">
+                                        <span class="text-emerald-400">₹</span>
+                                        <input type="number" id="inv-discount" value="0" min="0" oninput="calculateInvoiceTotals()" class="w-full bg-transparent text-right text-white py-1 outline-none text-sm appearance-none">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between pb-3 border-b border-emerald-700"><span class="text-emerald-200">Tax (GST)</span><span class="font-mono" id="summary-tax">₹0.00</span></div>
+                                <div class="flex justify-between items-end pt-2">
+                                    <span class="text-emerald-100 text-lg">Grand Total</span>
+                                    <span class="text-3xl font-bold tracking-tight" id="summary-grand">₹0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment QR -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="indian-rupee" class="w-5 h-5"></i> Payment Settlement</h3>
+                            
+                            <div class="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4" id="payment-mode-toggle">
+                                <button onclick="setPaymentMode('upi')" id="btn-mode-upi" class="flex-1 py-2 rounded-lg text-sm font-medium bg-white shadow-sm text-emerald-700 transition-all">UPI / QR</button>
+                                <button onclick="setPaymentMode('cash')" id="btn-mode-cash" class="flex-1 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700 transition-all">Cash</button>
+                            </div>
+
+                            <div id="qr-container" class="flex flex-col items-center justify-center p-4 bg-emerald-50 rounded-xl border border-emerald-100 transition-all">
+                                <div class="text-xs font-medium text-emerald-600 mb-3 uppercase tracking-wider">Auto-Updating QR</div>
+                                <div class="bg-white p-2 rounded-xl shadow-sm" id="qr-image-wrapper">
+                                    <!-- QR Image Injected Here -->
+                                </div>
+                                <div class="text-xs text-slate-500 mt-3 text-center">Scan to pay exact amount.</div>
+                            </div>
+                            
+                            <div id="cash-container" class="hidden text-center p-6 bg-slate-50 rounded-xl transition-all">
+                                <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-2"><i data-lucide="indian-rupee" class="w-5 h-5 text-slate-500"></i></div>
+                                <p class="text-slate-600 font-medium text-sm">Cash Payment</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory View -->
+            <div id="view-inventory" class="tab-content w-full">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                    <div class="w-full md:w-auto">
+                        <h2 class="text-2xl font-bold text-slate-800">Product Manager</h2>
+                        <p class="text-slate-500">Manage inventory and base pricing.</p>
+                        <div class="mt-4 relative max-w-md">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                            <input type="text" id="inventory-search" placeholder="Search products..." oninput="window.renderInventory()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <button onclick="toggleProductModal(true)" class="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>
+                </div>
+
+                <!-- Add Product Modal (Inline for Mobile Simplicity) -->
+                <div id="add-product-form" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 md:p-6 mb-6">
+                    <h3 class="font-bold mb-4">Add New Item</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Product Name</label>
+                            <input type="text" id="new-prod-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Base Rate (₹)</label>
+                            <input type="number" id="new-prod-rate" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 block mb-1">GST %</label>
+                            <select id="new-prod-gst" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none">
+                                <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                             <button onclick="toggleProductModal(false)" class="flex-1 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
+                             <button onclick="saveProduct()" class="flex-1 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="inventory-list">
+                    <!-- Products injected here -->
+                </div>
+            </div>
+
+            <!-- Records View -->
+            <div id="view-records" class="tab-content w-full">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Sales Records</h2>
+                        <p class="text-slate-500">Advanced filtering and bulk exports.</p>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="exportCSV()" class="flex-1 md:flex-none px-4 py-2 bg-white text-emerald-700 border border-emerald-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-50"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> CSV</button>
+                        <button onclick="bulkExportPDF()" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200"><i data-lucide="download" class="w-4 h-4"></i> Bulk PDF</button>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">Search</label>
+                        <div class="relative">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                            <input type="text" id="filter-search" placeholder="Invoice ID or Name..." oninput="renderRecords()" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">Start Date</label>
+                        <input type="date" id="filter-start" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">End Date</label>
+                        <input type="date" id="filter-end" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">Client</label>
+                        <select id="filter-client" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white">
+                            <option value="">All Clients</option>
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm min-w-[800px]">
+                            <thead class="bg-slate-50 text-slate-600 border-b border-slate-100">
+                                <tr>
+                                    <th class="p-4 font-medium">Invoice No.</th>
+                                    <th class="p-4 font-medium">Date</th>
+                                    <th class="p-4 font-medium">Client Name</th>
+                                    <th class="p-4 font-medium">GST No.</th>
+                                    <th class="p-4 font-medium text-right">Amount</th>
+                                    <th class="p-4 font-medium text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="records-list">
+                                <!-- Records injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clients View -->
+             <div id="view-clients" class="tab-content w-full">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                    <div class="w-full md:w-auto">
+                        <h2 class="text-2xl font-bold text-slate-800">Client CRM</h2>
+                        <p class="text-slate-500">Auto-generated from invoices.</p>
+                        <div class="mt-4 relative max-w-md">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                            <input type="text" id="clients-search" placeholder="Search clients..." oninput="window.renderClients()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Client Edit Modal -->
+                <div id="edit-client-form" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 mb-6 shadow-sm">
+                    <h3 class="font-bold mb-4">Edit Client Profile</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Name</label><input type="text" id="edit-client-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Mobile</label><input type="text" id="edit-client-mobile" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">GSTIN</label><input type="text" id="edit-client-gstin" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Address</label><input type="text" id="edit-client-address" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                    </div>
+                    <div class="flex gap-2 mt-4 justify-end">
+                        <button onclick="toggleClientModal(false)" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
+                        <button onclick="saveClientEdit()" class="px-6 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save Changes</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="clients-list">
+                    <!-- Clients injected here -->
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="view-settings" class="tab-content w-full">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">System Settings</h2>
+                    <p class="text-slate-500">Business profile and invoice customization.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                        <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Business Profile</h3>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Business Name</label><input type="text" id="set-biz-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Business GSTIN</label><input type="text" id="set-biz-gstin" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Registered Address</label><input type="text" id="set-biz-address" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Contact Phone</label><input type="text" id="set-biz-phone" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                        <div><label class="text-sm font-medium text-slate-700 block mb-1">UPI Payment ID (For QR)</label><input type="text" id="set-biz-upi" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none" placeholder="example@upi"></div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                            <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Branding & Assets</h3>
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden" id="logo-preview">
+                                    <i data-lucide="image" class="text-slate-300"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <label class="text-sm font-medium text-slate-700 block mb-1">Business Logo</label>
+                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'logo')" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4 pt-2">
+                                <div class="w-24 h-12 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden" id="sig-preview">
+                                    <i data-lucide="pen-tool" class="text-slate-300"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <label class="text-sm font-medium text-slate-700 block mb-1">Authorized Signature</label>
+                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'signature')" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                            <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Invoice Format</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="setTemplate('modern')" id="tpl-modern" class="p-3 border rounded-xl text-left border-emerald-500 bg-emerald-50"><div class="font-bold text-emerald-800">Modern</div><div class="text-xs text-emerald-600">Clean & Colored</div></button>
+                                <button onclick="setTemplate('classic')" id="tpl-classic" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300"><div class="font-bold text-slate-800">Classic</div><div class="text-xs text-slate-500">Standard ERP</div></button>
+                                <button onclick="setTemplate('minimal')" id="tpl-minimal" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300"><div class="font-bold text-slate-800">Minimal</div><div class="text-xs text-slate-500">No borders</div></button>
+                                <button onclick="setTemplate('compact')" id="tpl-compact" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300"><div class="font-bold text-slate-800">Compact</div><div class="text-xs text-slate-500">Dense layout</div></button>
+                            </div>
+                        </div>
+                        
+                        <button onclick="saveSettings()" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="save" class="w-5 h-5"></i> Save All Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Viewer Modal -->
+        <div id="invoice-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+            <div class="bg-slate-100 rounded-2xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-text"></i> Invoice Preview</h3>
+                    <div class="flex gap-2">
+                        <button onclick="downloadPDF()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium flex gap-2 items-center"><i data-lucide="download" class="w-4 h-4"></i> Download PDF</button>
+                        <button onclick="closeInvoiceModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center">
+                    <!-- The actual printable area -->
+                    <div id="invoice-render-area" class="bg-white shadow-sm w-full max-w-[210mm] min-h-[297mm] p-10 relative text-slate-800 text-sm">
+                        <!-- Content injected via JS Template Engine -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden area for bulk PDF generation -->
+        <div id="bulk-render-area" class="hidden"></div>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-2 px-2 z-30 shadow-[0_-4px_24px_rgba(0,0,0,0.05)]" id="mobile-nav">
+        <!-- Mobile Nav injected via JS -->
+    </nav>
+
+    <!-- Firebase SDK Implementation & Core Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment Variables
+        const defaultAppId = 'dev-ayurveda-html-app';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : defaultAppId;
+        const fallbackConfig = {
+            apiKey: "AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og",
+            authDomain: "dev-ayurveda.firebaseapp.com",
+            projectId: "dev-ayurveda",
+            storageBucket: "dev-ayurveda.firebasestorage.app",
+            messagingSenderId: "40760282698",
+            appId: "1:40760282698:web:20e31100eed712631ca0b3"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
+
+        // Firebase Init
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global State
+        window.AppState = {
+            user: null,
+            activeTab: 'invoice',
+            products: [],
+            clients: [],
+            invoices: [],
+            revenueChartInst: null,
+            settings: {
+                businessName: 'Dev Ayurveda', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', template: 'modern'
+            },
+            editingProductId: null,
+            editingClientId: null,
+            // Invoice Draft State
+            draft: {
+                id: `INV-${Date.now().toString().slice(-6)}`,
+                items: [],
+                discount: 0,
+                paymentMode: 'upi',
+                client: { name: '', mobile: '', gstin: '', address: '' }
+            }
+        };
+
+        // Navigation Structure
+        const navItems = [
+            { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+            { id: 'invoice', icon: 'plus', label: 'Invoice' },
+            { id: 'records', icon: 'file-text', label: 'Records' },
+            { id: 'inventory', icon: 'box', label: 'Inventory' },
+            { id: 'clients', icon: 'users', label: 'Clients' },
+            { id: 'settings', icon: 'settings', label: 'Settings' }
+        ];
+
+        // Formatters
+        const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt || 0);
+
+        // Initialize Authentication (Crucial Rule 3)
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth init failed:", err);
+            }
+        }
+
+        // Setup Application after Auth
+        initAuth().then(() => {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    window.AppState.user = user;
+                    document.getElementById('user-id-display').textContent = user.uid;
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    setupFirestoreListeners();
+                    renderNavigation();
+                    switchTab(window.AppState.activeTab);
+                    updateInvoiceUI();
+                }
+            });
+        });
+
+        // Setup Data Listeners (Crucial Rule 1 & 2)
+        function setupFirestoreListeners() {
+            const uid = window.AppState.user.uid;
+            
+            // Products
+            onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'products'), 
+                (snap) => { 
+                    window.AppState.products = snap.docs.map(d => ({id: d.id, ...d.data()})); 
+                    if(window.AppState.activeTab === 'inventory' && window.renderInventory) window.renderInventory();
+                    updateDashboard();
+                },
+                (err) => console.error(err)
+            );
+
+            // Clients
+            onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'clients'), 
+                (snap) => { 
+                    window.AppState.clients = snap.docs.map(d => ({id: d.id, ...d.data()})); 
+                    if(window.AppState.activeTab === 'clients') renderClients();
+                },
+                (err) => console.error(err)
+            );
+
+            // Invoices
+            onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'invoices'), 
+                (snap) => { 
+                    window.AppState.invoices = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt); 
+                    if(window.AppState.activeTab === 'records') window.renderRecords();
+                    if(window.AppState.activeTab === 'dashboard') updateDashboard();
+                    if(window.AppState.activeTab === 'clients') renderClients();
+                },
+                (err) => console.error(err)
+            );
+
+            // Settings
+            onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'config', 'settings'),
+                (docSnap) => {
+                    if (docSnap.exists()) {
+                        window.AppState.settings = { ...window.AppState.settings, ...docSnap.data() };
+                        populateSettingsUI();
+                    }
+                },
+                (err) => console.error(err)
+            );
+        }
+
+        // --- UI Rendering Functions --- //
+
+        // 1. Navigation
+        function renderNavigation() {
+            const desktopNav = document.getElementById('desktop-nav');
+            const mobileNav = document.getElementById('mobile-nav');
+            desktopNav.innerHTML = '';
+            mobileNav.innerHTML = '';
+
+            navItems.forEach(item => {
+                const isActive = window.AppState.activeTab === item.id;
+                
+                // Desktop
+                const dBtn = document.createElement('button');
+                dBtn.className = `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all w-full text-left ${isActive ? 'nav-desktop-active' : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'}`;
+                dBtn.innerHTML = `<i data-lucide="${item.icon}" class="w-5 h-5"></i> ${item.label}`;
+                dBtn.onclick = () => switchTab(item.id);
+                desktopNav.appendChild(dBtn);
+
+                // Mobile
+                const mBtn = document.createElement('button');
+                mBtn.className = `flex flex-col items-center p-2 text-xs font-medium transition-colors w-full ${isActive ? 'nav-mobile-active' : 'text-slate-500'}`;
+                mBtn.innerHTML = `<i data-lucide="${item.icon}" class="w-6 h-6 mb-1 ${isActive ? 'fill-emerald-100' : ''}"></i> <span class="truncate w-full text-center">${item.label}</span>`;
+                mBtn.onclick = () => switchTab(item.id);
+                mobileNav.appendChild(mBtn);
+            });
             lucide.createIcons();
-            calculateRow(rowId);
         }
 
-        function removeRow(id) {
-            document.getElementById(`row-${id}`).remove();
-            calculateSummary();
+        window.switchTab = function(tabId) {
+            window.AppState.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${tabId}`).classList.add('active');
+            renderNavigation();
+
+            // Refresh views on enter
+            if(tabId === 'dashboard') updateDashboard();
+            if(tabId === 'inventory' && window.renderInventory) window.renderInventory();
+            if(tabId === 'records') { populateClientFilter(); window.renderRecords(); }
+            if(tabId === 'clients') renderClients();
+            if(tabId === 'settings') populateSettingsUI();
+            window.scrollTo(0,0);
         }
 
-        function calculateRow(id) {
-            const row = document.getElementById(`row-${id}`);
-            const qty = parseFloat(row.querySelector('.itemQty').value) || 0;
-            const price = parseFloat(row.querySelector('.itemPrice').value) || 0;
-            const gstPercent = parseFloat(row.querySelector('.itemGst').value) || 0;
+        // 2. Dashboard
+        function updateDashboard() {
+            const invoices = window.AppState.invoices;
+            const finalized = invoices.filter(i => i.status === 'final');
+            const totalRev = finalized.reduce((sum, i) => sum + i.grandTotal, 0);
             
-            const subtotal = qty * price;
-            const gstAmount = subtotal * (gstPercent / 100);
-            const total = subtotal + gstAmount;
-            
-            row.querySelector('.itemTotal').innerText = total.toFixed(2);
-            calculateSummary();
-        }
+            document.getElementById('dash-revenue').textContent = formatINR(totalRev);
+            document.getElementById('dash-drafts').textContent = invoices.filter(i => i.status === 'draft').length;
+            document.getElementById('dash-products').textContent = window.AppState.products.length;
 
-        function calculateSummary() {
-            let subtotal = 0;
-            let totalTax = 0;
+            // Chart Logic
+            const ctx = document.getElementById('revenueChart').getContext('2d');
             
-            document.querySelectorAll('#productBody tr').forEach(row => {
-                const qty = parseFloat(row.querySelector('.itemQty').value) || 0;
-                const price = parseFloat(row.querySelector('.itemPrice').value) || 0;
-                const gstPercent = parseFloat(row.querySelector('.itemGst').value) || 0;
-                
-                const lineSub = qty * price;
-                const lineTax = lineSub * (gstPercent / 100);
-                
-                subtotal += lineSub;
-                totalTax += lineTax;
+            // Aggregate last 7 days
+            const last7Days = Array.from({length: 7}, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                return d.toISOString().split('T')[0];
+            }).reverse();
+
+            const chartData = last7Days.map(date => {
+                return finalized.filter(inv => inv.date === date).reduce((sum, inv) => sum + inv.grandTotal, 0);
             });
 
-            document.getElementById('summarySubtotal').innerText = `₹ ${subtotal.toFixed(2)}`;
-            document.getElementById('summaryTax').innerText = `₹ ${totalTax.toFixed(2)}`;
-            document.getElementById('summaryGrandTotal').innerText = `₹ ${(subtotal + totalTax).toFixed(2)}`;
+            if (window.AppState.revenueChartInst) window.AppState.revenueChartInst.destroy();
+            
+            window.AppState.revenueChartInst = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: last7Days.map(d => d.slice(5)),
+                    datasets: [{ label: 'Revenue (₹)', data: chartData, backgroundColor: '#059669', borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+            });
+
+            // Recent Activity
+            const recentDiv = document.getElementById('dash-recent-activity');
+            recentDiv.innerHTML = invoices.slice(0, 5).map(inv => `
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                    <div class="truncate pr-2">
+                        <div class="font-medium text-slate-800 text-sm truncate">${inv.client.name || 'Unknown'}</div>
+                        <div class="text-xs text-slate-400">${inv.id}</div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="font-bold text-emerald-700 text-sm">${formatINR(inv.grandTotal)}</div>
+                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${inv.status === 'final' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${inv.status}</span>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No recent activity.</div>';
         }
 
-        // PDF Generation Logic
-        async function generateInvoice(mode) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+        // 3. Invoice Engine Logic
+        window.handleClientSearch = function(val) {
+            const suggDiv = document.getElementById('client-suggestions');
+            if(!val) { suggDiv.classList.add('hidden'); return; }
             
-            // Branding
-            doc.setFillColor(45, 90, 39); // Ayurveda Green
-            doc.rect(0, 0, 210, 40, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(24);
-            doc.setFont("helvetica", "bold");
-            doc.text("DEV AYURVEDA", 15, 25);
-            doc.setFontSize(10);
-            doc.text("TAX INVOICE", 170, 25);
+            const matches = window.AppState.clients.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
+            if(matches.length === 0) { suggDiv.classList.add('hidden'); return; }
 
-            // Client Info
-            doc.setTextColor(40, 40, 40);
-            doc.setFontSize(10);
-            doc.text("BILL TO:", 15, 55);
-            doc.setFont("helvetica", "bold");
-            doc.text(document.getElementById('custName').value || "Cash Customer", 15, 62);
-            doc.setFont("helvetica", "normal");
-            doc.text(`GSTIN: ${document.getElementById('custGst').value || 'N/A'}`, 15, 68);
-            doc.text(`Mobile: ${document.getElementById('custMobile').value || 'N/A'}`, 15, 74);
-            doc.text(`Address: ${document.getElementById('custAddress').value || 'N/A'}`, 15, 80);
+            suggDiv.innerHTML = matches.map(c => `
+                <div class="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50" onclick='selectClient(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+                    <div class="font-medium text-slate-800">${c.name}</div>
+                    <div class="text-xs text-slate-500">Mob: ${c.mobile || 'N/A'}</div>
+                </div>
+            `).join('');
+            suggDiv.classList.remove('hidden');
+        }
 
-            // Metadata
-            const date = new Date().toLocaleDateString();
-            const invNo = "INV-" + Math.floor(1000 + Math.random() * 9000);
-            doc.text(`Date: ${date}`, 150, 62);
-            doc.text(`Invoice No: ${invNo}`, 150, 68);
+        window.selectClient = function(c) {
+            document.getElementById('inv-client-name').value = c.name;
+            document.getElementById('inv-client-mobile').value = c.mobile || '';
+            document.getElementById('inv-client-gstin').value = c.gstin || '';
+            document.getElementById('inv-client-address').value = c.address || '';
+            document.getElementById('client-suggestions').classList.add('hidden');
+        }
 
-            // Table
-            const body = [];
-            document.querySelectorAll('#productBody tr').forEach(row => {
-                body.push([
-                    row.querySelector('.itemName').value,
-                    row.querySelector('.itemQty').value,
-                    row.querySelector('.itemPrice').value,
-                    row.querySelector('.itemGst').value + "%",
-                    row.querySelector('.itemTotal').innerText
-                ]);
+        window.handleProductSearch = function(val) {
+            const suggDiv = document.getElementById('product-suggestions');
+            if(!val) { suggDiv.classList.add('hidden'); return; }
+            
+            const matches = window.AppState.products.filter(p => !p.isHidden && p.name.toLowerCase().includes(val.toLowerCase()));
+            if(matches.length === 0) { suggDiv.classList.add('hidden'); return; }
+
+            suggDiv.innerHTML = matches.map(p => `
+                <div class="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 flex justify-between items-center" onclick='addDraftItem(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+                    <div><div class="font-medium text-slate-800">${p.name}</div></div>
+                    <div class="text-right"><div class="font-bold text-emerald-700">₹${p.rate}</div></div>
+                </div>
+            `).join('');
+            suggDiv.classList.remove('hidden');
+        }
+
+        window.addDraftItem = function(p) {
+            const item = { id: Date.now().toString(), productId: p.id, name: p.name, rate: Number(p.rate), qty: 1, gst: Number(p.gst) };
+            window.AppState.draft.items.push(item);
+            document.getElementById('inv-product-search').value = '';
+            document.getElementById('product-suggestions').classList.add('hidden');
+            updateInvoiceUI();
+        }
+
+        window.updateDraftItem = function(id, field, val) {
+            const item = window.AppState.draft.items.find(i => i.id === id);
+            if(item) { item[field] = Number(val); updateInvoiceUI(); }
+        }
+
+        window.removeDraftItem = function(id) {
+            window.AppState.draft.items = window.AppState.draft.items.filter(i => i.id !== id);
+            updateInvoiceUI();
+        }
+
+        window.setPaymentMode = function(mode) {
+            window.AppState.draft.paymentMode = mode;
+            updateInvoiceUI();
+        }
+
+        window.calculateInvoiceTotals = function() {
+            let subtotal = 0, totalTax = 0;
+            const items = window.AppState.draft.items;
+            
+            items.forEach(item => {
+                const lineTotal = item.qty * item.rate;
+                totalTax += lineTotal * (item.gst / 100);
+                subtotal += lineTotal;
             });
 
-            doc.autoTable({
-                startY: 90,
-                head: [['Product Description', 'Qty', 'Unit Price', 'GST', 'Total (INR)']],
-                body: body,
-                headStyles: { fillColor: [45, 90, 39] },
-                theme: 'striped'
-            });
+            const discount = Number(document.getElementById('inv-discount').value) || 0;
+            const grandTotal = Math.max(0, subtotal + totalTax - discount);
 
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFont("helvetica", "bold");
-            doc.text(`Grand Total: ${document.getElementById('summaryGrandTotal').innerText}`, 150, finalY + 10);
+            // Update DOM DOM
+            document.getElementById('summary-subtotal').textContent = formatINR(subtotal);
+            document.getElementById('summary-tax').textContent = formatINR(totalTax);
+            document.getElementById('summary-grand').textContent = formatINR(grandTotal);
 
-            // Footer
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "italic");
-            doc.text("Thank you for choosing Dev Ayurveda. Be healthy, be natural.", 15, finalY + 30);
-
-            if(mode === 'download') {
-                doc.save(`${invNo}_DevAyurveda.pdf`);
+            // Update QR Code
+            const qrWrapper = document.getElementById('qr-image-wrapper');
+            if(grandTotal > 0 && window.AppState.draft.paymentMode === 'upi') {
+                const upiStr = `upi://pay?pa=business@upi&pn=DevAyurveda&am=${grandTotal.toFixed(2)}&cu=INR`;
+                qrWrapper.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(upiStr)}&color=047857" width="140" height="140" class="block mx-auto rounded">`;
             } else {
-                window.open(doc.output('bloburl'), '_blank');
+                qrWrapper.innerHTML = `<div class="w-[140px] h-[140px] bg-slate-100 flex items-center justify-center text-slate-400 text-xs text-center">Add items<br>to generate QR</div>`;
             }
 
-            // Sync simulation (Firebase logic would trigger here)
-            console.log("Syncing to Firebase...");
+            return { subtotal, totalTax, grandTotal, discount };
         }
 
-        function exportToExcel() {
-            const data = [];
-            document.querySelectorAll('#productBody tr').forEach(row => {
-                data.push({
-                    Customer: document.getElementById('custName').value,
-                    GSTIN: document.getElementById('custGst').value,
-                    Product: row.querySelector('.itemName').value,
-                    Quantity: row.querySelector('.itemQty').value,
-                    Price: row.querySelector('.itemPrice').value,
-                    GST: row.querySelector('.itemGst').value,
-                    Total: row.querySelector('.itemTotal').innerText
-                });
-            });
+        window.updateInvoiceUI = function() {
+            // Update Table
+            const tbody = document.getElementById('invoice-items-body');
+            const items = window.AppState.draft.items;
             
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Invoices");
-            XLSX.writeFile(wb, "DevAyurveda_Report.xlsx");
+            if(items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr>`;
+            } else {
+                tbody.innerHTML = items.map(item => `
+                    <tr class="border-b border-slate-100 last:border-0 bg-white">
+                        <td class="p-3 font-medium text-slate-800 min-w-[120px]">${item.name}</td>
+                        <td class="p-3"><input type="number" min="1" class="w-16 p-1 border border-slate-200 rounded outline-none" value="${item.qty}" onchange="updateDraftItem('${item.id}', 'qty', this.value)"></td>
+                        <td class="p-3"><input type="number" class="w-20 p-1 border border-slate-200 rounded outline-none" value="${item.rate}" onchange="updateDraftItem('${item.id}', 'rate', this.value)"></td>
+                        <td class="p-3 text-slate-600">${item.gst}%</td>
+                        <td class="p-3 text-right font-medium text-emerald-700">${(item.qty * item.rate).toFixed(2)}</td>
+                        <td class="p-3 text-center"><button onclick="removeDraftItem('${item.id}')" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                    </tr>
+                `).join('');
+                lucide.createIcons();
+            }
+
+            // Payment toggles styling
+            const m = window.AppState.draft.paymentMode;
+            document.getElementById('btn-mode-upi').className = `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${m === 'upi' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`;
+            document.getElementById('btn-mode-cash').className = `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${m === 'cash' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`;
+            
+            if(m==='upi') {
+                document.getElementById('qr-container').classList.remove('hidden');
+                document.getElementById('cash-container').classList.add('hidden');
+            } else {
+                document.getElementById('qr-container').classList.add('hidden');
+                document.getElementById('cash-container').classList.remove('hidden');
+            }
+
+            document.getElementById('inv-id-display').textContent = window.AppState.draft.id;
+            calculateInvoiceTotals();
         }
 
-        function resetApp() {
-            if(confirm("Are you sure you want to clear all data?")) {
-                document.querySelectorAll('input').forEach(i => i.value = "");
-                document.getElementById('productBody').innerHTML = "";
-                addRow();
-                calculateSummary();
+        window.resumeDraft = function(id) {
+            const inv = window.AppState.invoices.find(i => i.id === id);
+            if(!inv) return;
+            window.AppState.draft = JSON.parse(JSON.stringify(inv));
+            
+            document.getElementById('inv-client-name').value = inv.client.name || '';
+            document.getElementById('inv-client-mobile').value = inv.client.mobile || '';
+            document.getElementById('inv-client-gstin').value = inv.client.gstin || '';
+            document.getElementById('inv-client-address').value = inv.client.address || '';
+            document.getElementById('inv-discount').value = inv.discount || 0;
+            
+            switchTab('invoice');
+            updateInvoiceUI();
+        }
+
+        window.saveInvoice = async function(status) {
+            const name = document.getElementById('inv-client-name').value.trim();
+            if(!name) return alert("Please specify a client name.");
+            if(window.AppState.draft.items.length === 0) return alert("Add at least one product.");
+
+            const totals = calculateInvoiceTotals();
+            const clientData = {
+                name: name,
+                mobile: document.getElementById('inv-client-mobile').value,
+                gstin: document.getElementById('inv-client-gstin').value,
+                address: document.getElementById('inv-client-address').value
+            };
+
+            const invoiceDoc = {
+                ...window.AppState.draft,
+                client: clientData,
+                status: status,
+                ...totals,
+                date: new Date().toISOString().split('T')[0],
+                createdAt: Date.now()
+            };
+
+            try {
+                // Save Invoice
+                await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', invoiceDoc.id), invoiceDoc);
+                
+                // Save/Update Client silently
+                const existingClient = window.AppState.clients.find(c => c.name.toLowerCase() === name.toLowerCase());
+                if(existingClient) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', existingClient.id), clientData);
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients'), { ...clientData, createdAt: serverTimestamp() });
+                }
+
+                alert(`Invoice ${status === 'final' ? 'Finalized' : 'Draft Saved'} successfully!`);
+                
+                // Reset Draft
+                if(status === 'final') {
+                    window.AppState.draft = {
+                        id: `INV-${Date.now().toString().slice(-6)}`,
+                        items: [], discount: 0, paymentMode: 'upi', client: { name: '', mobile: '', gstin: '', address: '' }
+                    };
+                    document.getElementById('inv-client-name').value = '';
+                    document.getElementById('inv-client-mobile').value = '';
+                    document.getElementById('inv-client-gstin').value = '';
+                    document.getElementById('inv-client-address').value = '';
+                    document.getElementById('inv-discount').value = '0';
+                    updateInvoiceUI();
+                }
+
+            } catch (err) {
+                console.error("Save failed", err);
+                alert("Error saving invoice.");
             }
         }
 
-        // Initial Row
-        window.onload = addRow;
+        // 4. Inventory Module
+        window.toggleProductModal = function(show) {
+            document.getElementById('add-product-form').classList.toggle('hidden', !show);
+            if(!show) {
+                window.AppState.editingProductId = null;
+                document.getElementById('add-product-form').querySelector('h3').textContent = "Add New Item";
+                document.getElementById('new-prod-name').value = '';
+                document.getElementById('new-prod-rate').value = '';
+            }
+        }
+
+        window.editProduct = function(id) {
+            const p = window.AppState.products.find(x => x.id === id);
+            if(!p) return;
+            window.AppState.editingProductId = id;
+            document.getElementById('new-prod-name').value = p.name;
+            document.getElementById('new-prod-rate').value = p.rate;
+            document.getElementById('new-prod-gst').value = p.gst;
+            document.getElementById('add-product-form').querySelector('h3').textContent = "Edit Item";
+            toggleProductModal(true);
+            window.scrollTo(0,0);
+        }
+
+        window.saveProduct = async function() {
+            const name = document.getElementById('new-prod-name').value.trim();
+            const rate = document.getElementById('new-prod-rate').value;
+            const gst = document.getElementById('new-prod-gst').value;
+
+            if(!name || !rate) return alert("Name and Rate required.");
+
+            try {
+                if (window.AppState.editingProductId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', window.AppState.editingProductId), {
+                        name, rate: Number(rate), gst: Number(gst)
+                    });
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products'), {
+                        name, rate: Number(rate), gst: Number(gst), isHidden: false, createdAt: serverTimestamp()
+                    });
+                }
+                toggleProductModal(false);
+            } catch(e) { console.error(e); alert("Failed to save product"); }
+        }
+
+        window.toggleHideProduct = async function(id, current) {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', id), { isHidden: !current });
+        }
+
+        window.renderInventory = function() {
+            const query = (document.getElementById('inventory-search')?.value || '').toLowerCase();
+            const filtered = window.AppState.products.filter(p => p.name.toLowerCase().includes(query));
+
+            const list = document.getElementById('inventory-list');
+            list.innerHTML = filtered.map(p => `
+                <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between ${p.isHidden ? 'opacity-60 bg-slate-50' : ''}">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-slate-800 truncate pr-2">${p.name}</h4>
+                            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">GST ${p.gst}%</span>
+                        </div>
+                        <div class="text-2xl font-bold text-slate-700">₹${p.rate}</div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                        <span class="text-xs ${p.isHidden ? 'text-amber-600 font-medium' : 'text-slate-400'}">${p.isHidden ? 'Archived' : 'Active'}</span>
+                        <div>
+                            <button onclick="editProduct('${p.id}')" class="text-xs text-blue-500 hover:text-blue-700 border border-slate-200 px-3 py-1 rounded hover:bg-blue-50 transition-colors mr-1">Edit</button>
+                            <button onclick="toggleHideProduct('${p.id}', ${p.isHidden})" class="text-xs text-slate-500 hover:text-emerald-600 border border-slate-200 px-3 py-1 rounded hover:bg-emerald-50 transition-colors">
+                                ${p.isHidden ? 'Unhide' : 'Archive'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No products found.</div>';
+        }
+
+        // 5. Records & Advanced Filters
+        function populateClientFilter() {
+            const select = document.getElementById('filter-client');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">All Clients</option>' + window.AppState.clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            select.value = currentVal;
+        }
+
+        window.renderRecords = function() {
+            const query = document.getElementById('filter-search').value.toLowerCase();
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+            const client = document.getElementById('filter-client').value;
+
+            const filtered = window.AppState.invoices.filter(i => {
+                const matchesQuery = i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query));
+                const matchesClient = client === "" || i.client.name === client;
+                const matchesStart = start === "" || i.date >= start;
+                const matchesEnd = end === "" || i.date <= end;
+                return matchesQuery && matchesClient && matchesStart && matchesEnd;
+            });
+
+            document.getElementById('records-list').innerHTML = filtered.map(inv => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white">
+                    <td class="p-4 font-mono text-emerald-700 text-sm">${inv.id}</td>
+                    <td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td>
+                    <td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td>
+                    <td class="p-4 text-slate-500 text-xs">${inv.client.gstin || '-'}</td>
+                    <td class="p-4 text-right font-bold text-slate-800">${formatINR(inv.grandTotal)}</td>
+                    <td class="p-4 text-center">
+                        ${inv.status === 'draft' 
+                            ? `<button onclick="resumeDraft('${inv.id}')" class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>`
+                            : `<button onclick="viewInvoice('${inv.id}')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View / PDF</button>`
+                        }
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" class="p-8 text-center text-slate-400">No records found matching filters.</td></tr>';
+        }
+
+        window.bulkExportPDF = async function() {
+            // Apply current filters to get the target list
+            const query = document.getElementById('filter-search').value.toLowerCase();
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+            const client = document.getElementById('filter-client').value;
+
+            const filtered = window.AppState.invoices.filter(i => {
+                const matchesQuery = i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query));
+                const matchesClient = client === "" || i.client.name === client;
+                const matchesStart = start === "" || i.date >= start;
+                const matchesEnd = end === "" || i.date <= end;
+                return matchesQuery && matchesClient && matchesStart && matchesEnd && i.status === 'final';
+            });
+
+            if(filtered.length === 0) return alert("No finalized invoices found in current filter.");
+            if(filtered.length > 20 && !confirm(`Generate bulk PDF for ${filtered.length} invoices? This may take a moment.`)) return;
+
+            const bulkArea = document.getElementById('bulk-render-area');
+            bulkArea.innerHTML = '';
+            bulkArea.classList.remove('hidden');
+
+            filtered.forEach(inv => {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = generateInvoiceHTML(inv);
+                // Force page break between invoices
+                wrapper.style.pageBreakAfter = 'always';
+                bulkArea.appendChild(wrapper);
+            });
+
+            const opt = {
+                margin: 0, filename: `Bulk_Invoices_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            await html2pdf().set(opt).from(bulkArea).save();
+            bulkArea.innerHTML = '';
+            bulkArea.classList.add('hidden');
+        }
+
+        window.exportCSV = function() {
+            const invoices = window.AppState.invoices;
+            if(invoices.length === 0) return alert("No data to export");
+            
+            const headers = "Invoice ID,Date,Client Name,Phone,Subtotal,Tax,Discount,Grand Total,Status,Mode\n";
+            const rows = invoices.map(i => 
+                `${i.id},${i.date},"${i.client.name || ''}",${i.client.mobile || ''},${i.subtotal},${i.totalTax},${i.discount},${i.grandTotal},${i.status},${i.paymentMode}`
+            ).join("\n");
+            
+            const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `DevAyurveda_Sales.csv`;
+            link.click();
+        }
+
+        // 6. Clients
+        window.toggleClientModal = function(show) {
+            document.getElementById('edit-client-form').classList.toggle('hidden', !show);
+            if(!show) window.AppState.editingClientId = null;
+        }
+
+        window.editClient = function(id) {
+            const c = window.AppState.clients.find(x => x.id === id);
+            if(!c) return;
+            window.AppState.editingClientId = id;
+            document.getElementById('edit-client-name').value = c.name || '';
+            document.getElementById('edit-client-mobile').value = c.mobile || '';
+            document.getElementById('edit-client-gstin').value = c.gstin || '';
+            document.getElementById('edit-client-address').value = c.address || '';
+            toggleClientModal(true);
+            window.scrollTo(0,0);
+        }
+
+        window.saveClientEdit = async function() {
+            if(!window.AppState.editingClientId) return;
+            const name = document.getElementById('edit-client-name').value.trim();
+            if(!name) return alert("Name is required");
+
+            const clientData = {
+                name,
+                mobile: document.getElementById('edit-client-mobile').value,
+                gstin: document.getElementById('edit-client-gstin').value,
+                address: document.getElementById('edit-client-address').value
+            };
+
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', window.AppState.editingClientId), clientData);
+                toggleClientModal(false);
+            } catch(e) { console.error(e); alert("Failed to update client."); }
+        }
+
+        window.renderClients = function() {
+            const query = (document.getElementById('clients-search')?.value || '').toLowerCase();
+            const invoices = window.AppState.invoices;
+            const filteredClients = window.AppState.clients.filter(c => c.name.toLowerCase().includes(query) || (c.mobile && c.mobile.includes(query)));
+            
+            document.getElementById('clients-list').innerHTML = filteredClients.map(c => {
+                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final');
+            const clv = cInvoices.reduce((sum, i) => sum + i.grandTotal, 0);
+            
+            return `
+                <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">
+                        ${c.name.charAt(0)}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-slate-800 truncate">${c.name}</h4>
+                        <div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div>
+                        <button onclick="editClient('${c.id}')" class="mt-2 text-[10px] px-2 py-1 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider">Edit Profile</button>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div>
+                        <div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div>
+                    </div>
+                </div>
+            `}).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No clients found.</div>';
+        }
+
+        // 7. Settings & Base64 Handling
+        function populateSettingsUI() {
+            const s = window.AppState.settings;
+            document.getElementById('set-biz-name').value = s.businessName || '';
+            document.getElementById('set-biz-gstin').value = s.gstin || '';
+            document.getElementById('set-biz-address').value = s.address || '';
+            document.getElementById('set-biz-phone').value = s.phone || '';
+            document.getElementById('set-biz-upi').value = s.upi || '';
+            
+            if(s.logo) document.getElementById('logo-preview').innerHTML = `<img src="${s.logo}" class="w-full h-full object-contain">`;
+            if(s.signature) document.getElementById('sig-preview').innerHTML = `<img src="${s.signature}" class="w-full h-full object-contain">`;
+            
+            setTemplate(s.template || 'modern');
+        }
+
+        window.handleImageUpload = function(event, type) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result;
+                window.AppState.settings[type] = base64;
+                if(type === 'logo') document.getElementById('logo-preview').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`;
+                if(type === 'signature') document.getElementById('sig-preview').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.setTemplate = function(tpl) {
+            window.AppState.settings.template = tpl;
+            ['modern', 'classic', 'minimal', 'compact'].forEach(t => {
+                const btn = document.getElementById(`tpl-${t}`);
+                if(t === tpl) {
+                    btn.className = 'p-3 border rounded-xl text-left border-emerald-500 bg-emerald-50';
+                } else {
+                    btn.className = 'p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white';
+                }
+            });
+        }
+
+        window.saveSettings = async function() {
+            try {
+                const s = window.AppState.settings;
+                s.businessName = document.getElementById('set-biz-name').value;
+                s.gstin = document.getElementById('set-biz-gstin').value;
+                s.address = document.getElementById('set-biz-address').value;
+                s.phone = document.getElementById('set-biz-phone').value;
+                s.upi = document.getElementById('set-biz-upi').value;
+
+                await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'config', 'settings'), s);
+                alert("Settings saved securely!");
+            } catch(e) { console.error(e); alert("Failed to save settings."); }
+        }
+
+        // 8. Invoice Template Engine & Viewer
+        window.viewInvoice = function(id) {
+            const inv = window.AppState.invoices.find(i => i.id === id);
+            if(!inv) return;
+            document.getElementById('invoice-render-area').innerHTML = generateInvoiceHTML(inv);
+            document.getElementById('invoice-modal').classList.remove('hidden');
+        }
+
+        window.closeInvoiceModal = function() {
+            document.getElementById('invoice-modal').classList.add('hidden');
+        }
+
+        window.downloadPDF = function() {
+            const element = document.getElementById('invoice-render-area');
+            const invId = element.querySelector('.inv-id-tracker').dataset.id;
+            const opt = {
+                margin: 0, filename: `${invId}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function generateInvoiceHTML(inv) {
+            const s = window.AppState.settings;
+            const tpl = s.template || 'modern';
+            
+            // Generate QR URLs
+            let paymentQR = '';
+            if(inv.grandTotal > 0 && s.upi) {
+                const upiStr = `upi://pay?pa=${s.upi}&pn=${encodeURIComponent(s.businessName)}&am=${inv.grandTotal.toFixed(2)}&cu=INR`;
+                paymentQR = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(upiStr)}&color=047857" class="w-20 h-20 border p-1 rounded">`;
+            }
+            // Dummy Digital URL based on invoice ID
+            const digitalURL = `https://dev-ayurveda.web.app/verify/${inv.id}`;
+            const digitalQR = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(digitalURL)}&color=0f172a" class="w-20 h-20 border p-1 rounded">`;
+
+            const logoHtml = s.logo ? `<img src="${s.logo}" class="h-16 object-contain">` : `<h1 class="text-3xl font-bold text-emerald-800">${s.businessName}</h1>`;
+            const sigHtml = s.signature ? `<img src="${s.signature}" class="h-12 object-contain mx-auto mb-1">` : `<div class="h-12 border-b-2 border-slate-200 mb-1 mx-4 w-32"></div>`;
+
+            const itemsHtml = inv.items.map((item, idx) => `
+                <tr class="border-b border-slate-200">
+                    <td class="py-2 text-center">${idx + 1}</td>
+                    <td class="py-2 font-medium">${item.name}</td>
+                    <td class="py-2 text-center">${item.qty}</td>
+                    <td class="py-2 text-right">₹${item.rate.toFixed(2)}</td>
+                    <td class="py-2 text-center">${item.gst}%</td>
+                    <td class="py-2 text-right font-medium">₹${(item.qty * item.rate).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            // Modern Template Structure
+            return `
+            <div class="inv-id-tracker font-sans bg-white relative" data-id="${inv.id}">
+                ${tpl === 'modern' ? '<div class="absolute top-0 left-0 w-full h-3 bg-emerald-600"></div>' : ''}
+                
+                <div class="flex justify-between items-start mb-10 pt-4">
+                    <div>
+                        ${logoHtml}
+                        <div class="mt-2 text-sm text-slate-500">
+                            ${s.address ? `<div>${s.address}</div>` : ''}
+                            ${s.phone ? `<div>Phone: ${s.phone}</div>` : ''}
+                            ${s.gstin ? `<div class="font-medium mt-1 text-slate-700">GSTIN: ${s.gstin}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <h2 class="text-4xl font-light text-slate-300 uppercase tracking-widest mb-2">Invoice</h2>
+                        <div class="font-bold text-slate-800 text-lg">${inv.id}</div>
+                        <div class="text-slate-500">Date: ${inv.date}</div>
+                        <div class="inline-block mt-2 px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold uppercase rounded-full">Status: ${inv.status}</div>
+                    </div>
+                </div>
+
+                <div class="mb-8 border-l-4 ${tpl === 'modern' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-800 bg-slate-50'} p-4">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To:</div>
+                    <h3 class="text-lg font-bold text-slate-800">${inv.client.name}</h3>
+                    <div class="text-sm text-slate-600 mt-1">
+                        ${inv.client.mobile ? `<div>📞 ${inv.client.mobile}</div>` : ''}
+                        ${inv.client.address ? `<div>📍 ${inv.client.address}</div>` : ''}
+                        ${inv.client.gstin ? `<div class="font-medium mt-1 text-slate-800">🏢 GSTIN: ${inv.client.gstin}</div>` : ''}
+                    </div>
+                </div>
+
+                <table class="w-full text-left mb-8">
+                    <thead class="${tpl === 'minimal' ? 'border-b-2 border-slate-800' : 'bg-slate-800 text-white'}">
+                        <tr>
+                            <th class="py-2 px-2 text-center w-10">#</th>
+                            <th class="py-2 px-2">Description</th>
+                            <th class="py-2 px-2 text-center w-16">Qty</th>
+                            <th class="py-2 px-2 text-right w-24">Rate</th>
+                            <th class="py-2 px-2 text-center w-16">GST</th>
+                            <th class="py-2 px-2 text-right w-32">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-slate-700">
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+
+                <div class="flex justify-end mb-12">
+                    <div class="w-72 space-y-2 text-sm">
+                        <div class="flex justify-between border-b pb-2"><span class="text-slate-500">Subtotal:</span><span class="font-medium">₹${inv.subtotal.toFixed(2)}</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-slate-500">GST Tax:</span><span class="font-medium">₹${inv.totalTax.toFixed(2)}</span></div>
+                        ${inv.discount > 0 ? `<div class="flex justify-between border-b pb-2 text-emerald-600"><span>Discount:</span><span>- ₹${inv.discount.toFixed(2)}</span></div>` : ''}
+                        <div class="flex justify-between items-end pt-2">
+                            <span class="text-lg font-bold text-slate-800">Grand Total:</span>
+                            <span class="text-2xl font-bold ${tpl === 'modern' ? 'text-emerald-700' : 'text-slate-800'}">₹${inv.grandTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mt-16 pt-8 border-t border-slate-200">
+                    <div class="flex gap-6">
+                        ${paymentQR ? `
+                        <div class="text-center">
+                            ${paymentQR}
+                            <div class="text-[10px] font-bold text-slate-500 mt-1 uppercase">Scan to Pay</div>
+                        </div>` : ''}
+                        <div class="text-center">
+                            ${digitalQR}
+                            <div class="text-[10px] font-bold text-slate-500 mt-1 uppercase">Digital Copy</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        ${sigHtml}
+                        <div class="text-xs font-bold text-slate-800">Authorized Signatory</div>
+                        <div class="text-[10px] text-slate-500">${s.businessName}</div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-12 text-sm text-slate-500 italic">
+                    Thank you for your business! For any queries, contact us at ${s.phone || 'our registered numbers'}.
+                </div>
+            </div>
+            `;
+        }
+
     </script>
 </body>
 </html>
+
