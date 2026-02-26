@@ -10,14 +10,20 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Local QR Code Generator for guaranteed scanning -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' } }
+                    colors: { emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' } },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
                 }
             }
         }
@@ -37,463 +43,509 @@
         .nav-desktop-active { background-color: #059669; color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4); }
         input, select, button, textarea { touch-action: manipulation; }
         
-        /* PIN Screen blur effect */
         #pin-lock-screen.active { display: flex; backdrop-filter: blur(8px); }
+        .splash-exit { opacity: 0; pointer-events: none; transition: opacity 0.5s ease-out; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans overflow-hidden flex flex-col md:flex-row h-screen relative">
+<body class="bg-slate-50 text-slate-900 font-sans overflow-hidden h-screen relative flex flex-col md:flex-row">
 
-    <!-- Web Lock (PIN) Overlay -->
-    <div id="pin-lock-screen" class="fixed inset-0 z-[100] bg-slate-900/90 hidden flex-col items-center justify-center transition-all">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4 text-center border border-slate-100">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="lock" class="w-8 h-8"></i></div>
-            <h2 class="text-2xl font-bold text-slate-800 mb-1">App Locked</h2>
-            <p class="text-slate-500 mb-6 text-sm">Enter your 4-digit PIN to access the ERP.</p>
-            <div class="flex justify-center mb-6">
-                <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="w-32 text-center text-3xl tracking-[0.5em] px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none transition-all">
+    <!-- 1. Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 z-[200] bg-emerald-800 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="animate-pulse-slow flex flex-col items-center">
+            <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-2xl mb-6">
+                <i data-lucide="leaf" class="w-12 h-12 text-emerald-600"></i>
             </div>
-            <button onclick="verifyPin()" class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all text-lg">Unlock App</button>
-            <p id="pin-error" class="text-red-500 text-sm mt-3 hidden font-medium">Incorrect PIN. Try again.</p>
+            <h1 class="text-4xl font-bold text-white tracking-wide mb-2">Dev Ayurveda</h1>
+            <p class="text-emerald-200 font-medium tracking-widest uppercase text-sm">Professional ERP System</p>
+        </div>
+        <div class="absolute bottom-12 flex flex-col items-center">
+            <i data-lucide="loader-2" class="w-6 h-6 text-emerald-300 animate-spin mb-2"></i>
+            <span class="text-emerald-400 text-xs">Initializing Secure Environment...</span>
         </div>
     </div>
 
-    <!-- Desktop Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)] shrink-0">
-        <div class="p-6">
-            <div class="flex items-center gap-3 mb-10 text-emerald-800">
-                <div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><i data-lucide="box" class="w-7 h-7"></i></div>
-                <div>
-                    <h1 class="text-xl font-bold leading-tight">Dev Ayurveda</h1>
-                    <p class="text-xs text-emerald-600 font-medium">ERP System</p>
-                </div>
-            </div>
-            <nav class="flex flex-col gap-2" id="desktop-nav"></nav>
-        </div>
-        <div class="p-6 border-t border-slate-100">
-            <div class="text-xs text-slate-400">Secure Session</div>
-            <div class="text-xs font-mono text-slate-500 truncate mt-1" id="user-id-display">Initializing...</div>
-        </div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <main class="flex-1 h-full overflow-y-auto relative pb-20 md:pb-0 scroll-smooth">
-        <div id="loading-screen" class="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center">
-            <i data-lucide="loader-2" class="w-10 h-10 text-emerald-600 animate-spin mb-4"></i>
-            <p class="text-emerald-800 font-medium">Connecting to Firebase...</p>
-        </div>
-
-        <div class="max-w-7xl mx-auto p-4 md:p-8 w-full">
-            
-            <!-- Dashboard View -->
-            <div id="view-dashboard" class="tab-content w-full">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Business Analytics Hub</h2>
-                    <p class="text-slate-500">Real-time overview of Dev Ayurveda performance.</p>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
-                    <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-6 shadow-sm border-none">
-                        <div class="text-emerald-100 text-sm font-medium mb-1">Total Verified Revenue</div>
-                        <div class="text-3xl md:text-4xl font-bold tracking-tight mb-2" id="dash-revenue">₹0.00</div>
+    <!-- 2. Authentication UI (Login & Signup) -->
+    <div id="auth-container" class="fixed inset-0 z-[150] bg-slate-50 hidden overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-100 p-8 animate-fade-in-up">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-emerald-600">
+                        <i data-lucide="box" class="w-8 h-8"></i>
                     </div>
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
-                        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3"><i data-lucide="alert-circle"></i></div>
-                        <div class="text-slate-500 text-sm font-medium">Pending Drafts</div>
-                        <div class="text-3xl font-bold text-slate-800" id="dash-drafts">0</div>
-                    </div>
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
-                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3"><i data-lucide="box"></i></div>
-                        <div class="text-slate-500 text-sm font-medium">Active Products</div>
-                        <div class="text-3xl font-bold text-slate-800" id="dash-products">0</div>
-                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800" id="auth-title">Welcome Back</h2>
+                    <p class="text-slate-500 text-sm mt-1" id="auth-subtitle">Sign in to access your dashboard.</p>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 min-h-[300px]">
-                        <h3 class="font-bold text-slate-700 mb-4">7-Day Revenue Trend</h3>
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                        <h3 class="font-bold text-slate-700 mb-4">Recent Activity</h3>
-                        <div id="dash-recent-activity" class="space-y-3"></div>
-                    </div>
-                </div>
-
-                <!-- Low Stock & Top Sellers -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="alert-triangle" class="text-red-500 w-5 h-5"></i> Low Stock Alerts</h3>
-                        <div id="dash-low-stock"></div>
-                    </div>
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="trending-up" class="text-emerald-500 w-5 h-5"></i> Top Selling Products</h3>
-                        <div id="dash-top-sellers"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Smart Invoice View -->
-            <div id="view-invoice" class="tab-content active w-full">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                <!-- Login Form -->
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
-                        <h2 class="text-2xl font-bold text-slate-800">New Invoice Engine</h2>
-                        <p class="text-slate-500 text-sm md:text-base">Draft auto-saves to prevent data loss.</p>
+                        <label class="text-sm font-medium text-slate-700 block mb-1">Email Address</label>
+                        <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 focus:bg-white outline-none transition-all">
                     </div>
-                    <div class="flex gap-2 w-full md:w-auto">
-                        <button onclick="saveInvoice('draft')" class="flex-1 md:flex-none px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-100 transition-all"><i data-lucide="save" class="w-4 h-4"></i> Draft</button>
-                        <button onclick="saveInvoice('final')" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="check-circle" class="w-4 h-4"></i> Finalize</button>
+                    <div>
+                        <label class="text-sm font-medium text-slate-700 block mb-1">Password</label>
+                        <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 focus:bg-white outline-none transition-all">
+                    </div>
+                    <button type="submit" class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all flex justify-center items-center gap-2 mt-2" id="login-btn">Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+                    <div class="text-center pt-4">
+                        <p class="text-sm text-slate-500">New to Dev Ayurveda? <button type="button" onclick="toggleAuthMode('signup')" class="text-emerald-600 font-bold hover:underline">Create an account</button></p>
+                    </div>
+                </form>
+
+                <!-- Signup Form (Hidden by default) -->
+                <form id="signup-form" onsubmit="handleSignup(event)" class="space-y-4 hidden">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Email Address *</label>
+                            <input type="email" id="signup-email" required class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Password *</label>
+                            <input type="password" id="signup-password" required minlength="6" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        <div class="col-span-2 mt-2 pt-2 border-t border-slate-100">
+                            <label class="text-xs font-bold text-emerald-600 uppercase tracking-wider block mb-3">Business Details</label>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Business Name *</label>
+                            <input type="text" id="signup-biz-name" required class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Owner Name</label>
+                            <input type="text" id="signup-owner" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Phone Number</label>
+                            <input type="tel" id="signup-phone" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-slate-700 block mb-1">GSTIN (Optional)</label>
+                            <input type="text" id="signup-gstin" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Address</label>
+                            <input type="text" id="signup-address" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        
+                        <!-- Assets -->
+                        <div class="col-span-2 mt-2 pt-2 border-t border-slate-100">
+                            <label class="text-xs font-bold text-emerald-600 uppercase tracking-wider block mb-3">Branding (Optional)</label>
+                        </div>
+                        <div class="col-span-2 flex items-center gap-3">
+                            <div class="w-12 h-12 bg-slate-100 border border-slate-200 rounded flex items-center justify-center overflow-hidden shrink-0" id="signup-logo-preview"><i data-lucide="image" class="text-slate-400 w-5 h-5"></i></div>
+                            <div class="flex-1">
+                                <label class="text-xs font-medium text-slate-700 block mb-1">Business Logo</label>
+                                <input type="file" accept="image/*" onchange="handleSignupUpload(event, 'logo')" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-emerald-50 file:text-emerald-700">
+                            </div>
+                        </div>
+                        <div class="col-span-2 flex items-center gap-3">
+                            <div class="w-16 h-10 bg-slate-100 border border-slate-200 rounded flex items-center justify-center overflow-hidden shrink-0" id="signup-sig-preview"><i data-lucide="pen-tool" class="text-slate-400 w-4 h-4"></i></div>
+                            <div class="flex-1">
+                                <label class="text-xs font-medium text-slate-700 block mb-1">Authorized Signature</label>
+                                <input type="file" accept="image/*" onchange="handleSignupUpload(event, 'signature')" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-emerald-50 file:text-emerald-700">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all flex justify-center items-center gap-2 mt-4" id="signup-btn">Create Account <i data-lucide="user-plus" class="w-4 h-4"></i></button>
+                    <div class="text-center pt-2 pb-4">
+                        <p class="text-sm text-slate-500">Already have an account? <button type="button" onclick="toggleAuthMode('login')" class="text-emerald-600 font-bold hover:underline">Sign In</button></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MAIN APP WRAPPER (Hidden until authenticated) -->
+    <div id="app-container" class="hidden w-full h-full flex flex-col md:flex-row">
+        <!-- Web Lock (PIN) Overlay -->
+        <div id="pin-lock-screen" class="fixed inset-0 z-[100] bg-slate-900/90 hidden flex-col items-center justify-center transition-all">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4 text-center border border-slate-100">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="lock" class="w-8 h-8"></i></div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-1">App Locked</h2>
+                <p class="text-slate-500 mb-6 text-sm">Enter your 4-digit PIN to access the ERP.</p>
+                <div class="flex justify-center mb-6">
+                    <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="w-32 text-center text-3xl tracking-[0.5em] px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none transition-all">
+                </div>
+                <button onclick="verifyPin()" class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all text-lg">Unlock App</button>
+                <p id="pin-error" class="text-red-500 text-sm mt-3 hidden font-medium">Incorrect PIN. Try again.</p>
+            </div>
+        </div>
+
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)] shrink-0">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-10 text-emerald-800">
+                    <div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><i data-lucide="box" class="w-7 h-7"></i></div>
+                    <div>
+                        <h1 class="text-xl font-bold leading-tight">Dev Ayurveda</h1>
+                        <p class="text-xs text-emerald-600 font-medium">ERP System</p>
+                    </div>
+                </div>
+                <nav class="flex flex-col gap-2" id="desktop-nav"></nav>
+            </div>
+            <div class="p-6 border-t border-slate-100">
+                <div class="text-xs text-slate-400">Authenticated as</div>
+                <div class="text-xs font-medium text-slate-800 truncate mt-1" id="user-id-display">...</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 h-full overflow-y-auto relative pb-20 md:pb-0 scroll-smooth">
+            <div class="max-w-7xl mx-auto p-4 md:p-8 w-full">
+                <!-- Dashboard View -->
+                <div id="view-dashboard" class="tab-content w-full">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Business Analytics Hub</h2>
+                        <p class="text-slate-500">Real-time overview of Dev Ayurveda performance.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+                        <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-6 shadow-sm border-none">
+                            <div class="text-emerald-100 text-sm font-medium mb-1">Total Verified Revenue</div>
+                            <div class="text-3xl md:text-4xl font-bold tracking-tight mb-2" id="dash-revenue">₹0.00</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3"><i data-lucide="alert-circle"></i></div>
+                            <div class="text-slate-500 text-sm font-medium">Pending Drafts</div>
+                            <div class="text-3xl font-bold text-slate-800" id="dash-drafts">0</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3"><i data-lucide="box"></i></div>
+                            <div class="text-slate-500 text-sm font-medium">Active Products</div>
+                            <div class="text-3xl font-bold text-slate-800" id="dash-products">0</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 min-h-[300px]">
+                            <h3 class="font-bold text-slate-700 mb-4">7-Day Revenue Trend</h3>
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                            <h3 class="font-bold text-slate-700 mb-4">Recent Activity</h3>
+                            <div id="dash-recent-activity" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock & Top Sellers -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="alert-triangle" class="text-red-500 w-5 h-5"></i> Low Stock Alerts</h3>
+                            <div id="dash-low-stock"></div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><i data-lucide="trending-up" class="text-emerald-500 w-5 h-5"></i> Top Selling Products</h3>
+                            <div id="dash-top-sellers"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Form Columns -->
-                    <div class="lg:col-span-2 space-y-6">
-                        <!-- Client Details -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5"></i> Client Details</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
-                                <div class="col-span-1 md:col-span-2 relative">
-                                    <label class="text-sm font-medium text-slate-700 mb-1 block">Client Name (Search or Enter New)</label>
-                                    <input type="text" id="inv-client-name" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all" autocomplete="off" oninput="handleClientSearch(this.value); window.updateDraftField('client', {...window.AppState.draft.client, name: this.value})" onfocus="handleClientSearch(this.value)">
-                                    <div id="client-suggestions" class="hidden absolute z-30 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
-                                </div>
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700 mb-1 block">Mobile Number</label>
-                                    <input type="tel" id="inv-client-mobile" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, mobile: this.value})">
-                                </div>
-                                <div>
-                                    <label class="text-sm font-medium text-slate-700 mb-1 block">GSTIN (Optional)</label>
-                                    <input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, gstin: this.value})">
-                                </div>
-                                <div class="col-span-1 md:col-span-2">
-                                    <label class="text-sm font-medium text-slate-700 mb-1 block">Address</label>
-                                    <input type="text" id="inv-client-address" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, address: this.value})">
-                                </div>
-                            </div>
+                <!-- Smart Invoice View -->
+                <div id="view-invoice" class="tab-content active w-full">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">New Invoice Engine</h2>
+                            <p class="text-slate-500 text-sm md:text-base">Draft auto-saves to prevent data loss.</p>
                         </div>
-
-                        <!-- Product Line Items -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="box" class="w-5 h-5"></i> Product Line Items</h3>
-                            
-                            <div class="relative mb-6">
-                                <div class="flex items-center relative">
-                                    <i data-lucide="search" class="w-5 h-5 absolute left-3 text-emerald-600 z-10"></i>
-                                    <input type="text" id="inv-product-search" class="w-full pl-10 pr-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50 focus:bg-white focus:border-emerald-500 outline-none placeholder:text-emerald-700/50" placeholder="Search product to add..." autocomplete="off" oninput="handleProductSearch(this.value)" onfocus="handleProductSearch(this.value)">
-                                </div>
-                                <div id="product-suggestions" class="hidden absolute z-20 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
-                            </div>
-
-                            <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100">
-                                <table class="w-full text-left text-sm min-w-[500px]">
-                                    <thead class="bg-slate-100 text-slate-600 font-medium">
-                                        <tr>
-                                            <th class="p-3">Item Name</th>
-                                            <th class="p-3 w-20">Qty</th>
-                                            <th class="p-3 w-24">Rate (₹)</th>
-                                            <th class="p-3 w-20">GST %</th>
-                                            <th class="p-3 w-24 text-right">Total (₹)</th>
-                                            <th class="p-3 w-10"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="invoice-items-body">
-                                        <tr><td colspan="6" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Terms & Notes -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
-                            <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><i data-lucide="file-edit" class="w-5 h-5"></i> Medical Notes & Instructions</h3>
-                            <textarea id="inv-notes" oninput="window.updateDraftField('notes', this.value)" rows="2" placeholder="Add specific treatment notes, dosage instructions, or invoice terms here..." class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all resize-none"></textarea>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="saveInvoice('draft')" class="flex-1 md:flex-none px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-100 transition-all"><i data-lucide="save" class="w-4 h-4"></i> Draft</button>
+                            <button onclick="saveInvoice('final')" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="check-circle" class="w-4 h-4"></i> Finalize</button>
                         </div>
                     </div>
 
-                    <!-- Computations Column -->
-                    <div class="space-y-6">
-                        <!-- Live Summary -->
-                        <div class="bg-emerald-800 text-white rounded-2xl p-6 shadow-xl shadow-emerald-900/20">
-                            <h3 class="text-emerald-100 font-medium mb-4 flex justify-between items-center">Live Summary <span id="inv-id-display" class="text-xs opacity-70"></span></h3>
-                            <div class="space-y-3 text-sm">
-                                <div class="flex justify-between"><span class="text-emerald-200">Subtotal</span><span class="font-mono" id="summary-subtotal">₹0.00</span></div>
-                                
-                                <!-- Discount Toggle -->
-                                <div class="flex justify-between items-center">
-                                    <span class="text-emerald-200">Discount</span>
-                                    <div class="flex items-center gap-1">
-                                        <select id="inv-discount-type" onchange="window.updateDraftField('discountType', this.value)" class="bg-emerald-900 border border-emerald-700 text-white rounded px-1 py-1 text-xs outline-none">
-                                            <option value="fixed">₹</option>
-                                            <option value="percent">%</option>
-                                        </select>
-                                        <div class="flex items-center w-20 border border-emerald-700 bg-emerald-900/50 rounded overflow-hidden px-2">
-                                            <input type="number" id="inv-discount" value="0" min="0" oninput="window.updateDraftField('discount', this.value)" class="w-full bg-transparent text-right text-white py-1 outline-none text-sm appearance-none">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- Client Details -->
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5"></i> Client Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+                                    <div class="col-span-1 md:col-span-2 relative">
+                                        <label class="text-sm font-medium text-slate-700 mb-1 block">Client Name (Search or Enter New)</label>
+                                        <input type="text" id="inv-client-name" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all" autocomplete="off" oninput="handleClientSearch(this.value); window.updateDraftField('client', {...window.AppState.draft.client, name: this.value})" onfocus="handleClientSearch(this.value)">
+                                        <div id="client-suggestions" class="hidden absolute z-30 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
+                                    </div>
+                                    <div><label class="text-sm font-medium text-slate-700 mb-1 block">Mobile Number</label><input type="tel" id="inv-client-mobile" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, mobile: this.value})"></div>
+                                    <div><label class="text-sm font-medium text-slate-700 mb-1 block">GSTIN (Optional)</label><input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, gstin: this.value})"></div>
+                                    <div class="col-span-1 md:col-span-2"><label class="text-sm font-medium text-slate-700 mb-1 block">Address</label><input type="text" id="inv-client-address" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, address: this.value})"></div>
+                                </div>
+                            </div>
+
+                            <!-- Product Line Items -->
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="box" class="w-5 h-5"></i> Product Line Items</h3>
+                                <div class="relative mb-6">
+                                    <div class="flex items-center relative">
+                                        <i data-lucide="search" class="w-5 h-5 absolute left-3 text-emerald-600 z-10"></i>
+                                        <input type="text" id="inv-product-search" class="w-full pl-10 pr-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50 focus:bg-white focus:border-emerald-500 outline-none placeholder:text-emerald-700/50" placeholder="Search product to add..." autocomplete="off" oninput="handleProductSearch(this.value)" onfocus="handleProductSearch(this.value)">
+                                    </div>
+                                    <div id="product-suggestions" class="hidden absolute z-20 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
+                                </div>
+
+                                <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100">
+                                    <table class="w-full text-left text-sm min-w-[500px]">
+                                        <thead class="bg-slate-100 text-slate-600 font-medium">
+                                            <tr>
+                                                <th class="p-3">Item Name</th><th class="p-3 w-20">Qty</th><th class="p-3 w-24">Rate (₹)</th>
+                                                <th class="p-3 w-20">GST %</th><th class="p-3 w-24 text-right">Total (₹)</th><th class="p-3 w-10"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="invoice-items-body"><tr><td colspan="6" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Terms & Notes -->
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
+                                <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><i data-lucide="file-edit" class="w-5 h-5"></i> Medical Notes & Instructions</h3>
+                                <textarea id="inv-notes" oninput="window.updateDraftField('notes', this.value)" rows="2" placeholder="Add specific treatment notes, dosage instructions, or invoice terms here..." class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Computations Column -->
+                        <div class="space-y-6">
+                            <!-- Live Summary -->
+                            <div class="bg-emerald-800 text-white rounded-2xl p-6 shadow-xl shadow-emerald-900/20">
+                                <h3 class="text-emerald-100 font-medium mb-4 flex justify-between items-center">Live Summary <span id="inv-id-display" class="text-xs opacity-70"></span></h3>
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between"><span class="text-emerald-200">Subtotal</span><span class="font-mono" id="summary-subtotal">₹0.00</span></div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-emerald-200">Discount</span>
+                                        <div class="flex items-center gap-1">
+                                            <select id="inv-discount-type" onchange="window.updateDraftField('discountType', this.value)" class="bg-emerald-900 border border-emerald-700 text-white rounded px-1 py-1 text-xs outline-none"><option value="fixed">₹</option><option value="percent">%</option></select>
+                                            <div class="flex items-center w-20 border border-emerald-700 bg-emerald-900/50 rounded overflow-hidden px-2">
+                                                <input type="number" id="inv-discount" value="0" min="0" oninput="window.updateDraftField('discount', this.value)" class="w-full bg-transparent text-right text-white py-1 outline-none text-sm appearance-none">
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="flex justify-between pb-3 border-b border-emerald-700"><span class="text-emerald-200">Tax (GST)</span><span class="font-mono" id="summary-tax">₹0.00</span></div>
+                                    <div class="flex justify-between items-end pt-2">
+                                        <span class="text-emerald-100 text-lg">Grand Total</span><span class="text-3xl font-bold tracking-tight" id="summary-grand">₹0.00</span>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between pb-3 border-b border-emerald-700"><span class="text-emerald-200">Tax (GST)</span><span class="font-mono" id="summary-tax">₹0.00</span></div>
-                                <div class="flex justify-between items-end pt-2">
-                                    <span class="text-emerald-100 text-lg">Grand Total</span>
-                                    <span class="text-3xl font-bold tracking-tight" id="summary-grand">₹0.00</span>
+                            </div>
+
+                            <!-- Payment QR -->
+                            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="indian-rupee" class="w-5 h-5"></i> Payment Settlement</h3>
+                                <div class="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4" id="payment-mode-toggle">
+                                    <button onclick="setPaymentMode('upi')" id="btn-mode-upi" class="flex-1 py-2 rounded-lg text-sm font-medium bg-white shadow-sm text-emerald-700 transition-all">UPI / QR</button>
+                                    <button onclick="setPaymentMode('cash')" id="btn-mode-cash" class="flex-1 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700 transition-all">Cash</button>
+                                </div>
+                                <div id="qr-container" class="flex flex-col items-center justify-center p-4 bg-emerald-50 rounded-xl border border-emerald-100 transition-all">
+                                    <div class="text-xs font-medium text-emerald-600 mb-3 uppercase tracking-wider">Auto-Updating QR</div>
+                                    <div class="bg-white p-2 rounded-xl shadow-sm" id="qr-image-wrapper"></div>
+                                    <div class="text-xs text-slate-500 mt-3 text-center">Scan to pay exact amount.</div>
+                                </div>
+                                <div id="cash-container" class="hidden text-center p-6 bg-slate-50 rounded-xl transition-all">
+                                    <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-2"><i data-lucide="indian-rupee" class="w-5 h-5 text-slate-500"></i></div>
+                                    <p class="text-slate-600 font-medium text-sm">Cash Payment</p>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Payment QR -->
-                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="indian-rupee" class="w-5 h-5"></i> Payment Settlement</h3>
-                            
-                            <div class="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4" id="payment-mode-toggle">
-                                <button onclick="setPaymentMode('upi')" id="btn-mode-upi" class="flex-1 py-2 rounded-lg text-sm font-medium bg-white shadow-sm text-emerald-700 transition-all">UPI / QR</button>
-                                <button onclick="setPaymentMode('cash')" id="btn-mode-cash" class="flex-1 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700 transition-all">Cash</button>
-                            </div>
-
-                            <div id="qr-container" class="flex flex-col items-center justify-center p-4 bg-emerald-50 rounded-xl border border-emerald-100 transition-all">
-                                <div class="text-xs font-medium text-emerald-600 mb-3 uppercase tracking-wider">Auto-Updating QR</div>
-                                <div class="bg-white p-2 rounded-xl shadow-sm" id="qr-image-wrapper"></div>
-                                <div class="text-xs text-slate-500 mt-3 text-center">Scan to pay exact amount.</div>
-                            </div>
-                            
-                            <div id="cash-container" class="hidden text-center p-6 bg-slate-50 rounded-xl transition-all">
-                                <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-2"><i data-lucide="indian-rupee" class="w-5 h-5 text-slate-500"></i></div>
-                                <p class="text-slate-600 font-medium text-sm">Cash Payment</p>
+                <!-- Inventory View -->
+                <div id="view-inventory" class="tab-content w-full">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                        <div class="w-full md:w-auto">
+                            <h2 class="text-2xl font-bold text-slate-800">Product Manager</h2>
+                            <p class="text-slate-500">Manage inventory, stock limits, and batches.</p>
+                            <div class="mt-4 relative max-w-md">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" id="inventory-search" placeholder="Search products..." oninput="window.renderInventory()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500">
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Inventory View -->
-            <div id="view-inventory" class="tab-content w-full">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-                    <div class="w-full md:w-auto">
-                        <h2 class="text-2xl font-bold text-slate-800">Product Manager</h2>
-                        <p class="text-slate-500">Manage inventory, stock limits, and batches.</p>
-                        <div class="mt-4 relative max-w-md">
-                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
-                            <input type="text" id="inventory-search" placeholder="Search products..." oninput="window.renderInventory()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500">
-                        </div>
-                    </div>
-                    <button onclick="toggleProductModal(true)" class="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>
-                </div>
-
-                <!-- Add Product Modal -->
-                <div id="add-product-form" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 md:p-6 mb-6">
-                    <h3 class="font-bold mb-4">Add New Item</h3>
-                    <!-- Batch, Expiry, Stock -->
-                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-                        <div class="md:col-span-2"><label class="text-sm font-medium text-slate-700 block mb-1">Product Name</label><input type="text" id="new-prod-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Base Rate (₹)</label><input type="number" id="new-prod-rate" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div>
-                            <label class="text-sm font-medium text-slate-700 block mb-1">GST %</label>
-                            <select id="new-prod-gst" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none">
-                                <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option>
-                            </select>
-                        </div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Stock Qty</label><input type="number" id="new-prod-stock" value="0" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Batch No.</label><input type="text" id="new-prod-batch" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Expiry Date</label><input type="month" id="new-prod-expiry" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        
-                        <div class="flex gap-2 md:col-span-5 md:justify-end">
-                             <button onclick="toggleProductModal(false)" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
-                             <button onclick="saveProduct()" class="px-6 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save Product</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="inventory-list"></div>
-            </div>
-
-            <!-- Records View -->
-            <div id="view-records" class="tab-content w-full">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800">Sales Records</h2>
-                        <p class="text-slate-500">Advanced filtering, payment tracking, and bulk exports.</p>
-                    </div>
-                    <div class="flex gap-2 w-full md:w-auto">
-                        <button onclick="exportCSV()" class="flex-1 md:flex-none px-4 py-2 bg-white text-emerald-700 border border-emerald-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-50"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> CSV</button>
-                        <button onclick="bulkExportPDF()" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200"><i data-lucide="download" class="w-4 h-4"></i> Bulk PDF</button>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-4 grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="text-xs font-medium text-slate-500 mb-1 block">Search</label>
-                        <div class="relative">
-                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
-                            <input type="text" id="filter-search" placeholder="Invoice ID or Name..." oninput="renderRecords()" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500">
-                        </div>
-                    </div>
-                    <div><label class="text-xs font-medium text-slate-500 mb-1 block">Start Date</label><input type="date" id="filter-start" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
-                    <div><label class="text-xs font-medium text-slate-500 mb-1 block">End Date</label><input type="date" id="filter-end" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
-                    <div>
-                        <label class="text-xs font-medium text-slate-500 mb-1 block">Payment Status</label>
-                        <select id="filter-payment" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white">
-                            <option value="">All Statuses</option>
-                            <option value="paid">Paid</option>
-                            <option value="unpaid">Unpaid</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm min-w-[900px]">
-                            <thead class="bg-slate-50 text-slate-600 border-b border-slate-100">
-                                <tr>
-                                    <th class="p-4 font-medium">Invoice No.</th>
-                                    <th class="p-4 font-medium">Date</th>
-                                    <th class="p-4 font-medium">Client Name</th>
-                                    <th class="p-4 font-medium text-right">Amount</th>
-                                    <th class="p-4 font-medium text-center">Payment</th>
-                                    <th class="p-4 font-medium text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="records-list"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Clients View -->
-             <div id="view-clients" class="tab-content w-full">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-                    <div class="w-full md:w-auto">
-                        <h2 class="text-2xl font-bold text-slate-800">Client CRM</h2>
-                        <p class="text-slate-500">Manage patient records and clinical notes.</p>
-                        <div class="mt-4 relative max-w-md">
-                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
-                            <input type="text" id="clients-search" placeholder="Search patients..." oninput="window.renderClients()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Add Client Edit Modal -->
-                <div id="edit-client-form" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 mb-6 shadow-sm">
-                    <h3 class="font-bold mb-4">Edit Patient Profile</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Name</label><input type="text" id="edit-client-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Mobile</label><input type="text" id="edit-client-mobile" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">GSTIN</label><input type="text" id="edit-client-gstin" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Address</label><input type="text" id="edit-client-address" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div class="md:col-span-4"><label class="text-sm font-medium text-slate-700 block mb-1">Medical / Treatment Notes</label><textarea id="edit-client-notes" rows="2" placeholder="Ongoing treatments, allergies, preferences..." class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none resize-none"></textarea></div>
-                    </div>
-                    <div class="flex gap-2 mt-4 justify-end">
-                        <button onclick="toggleClientModal(false)" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
-                        <button onclick="saveClientEdit()" class="px-6 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save Changes</button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="clients-list"></div>
-            </div>
-
-            <!-- Settings View -->
-            <div id="view-settings" class="tab-content w-full">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">System Settings</h2>
-                    <p class="text-slate-500">Business profile and security configuration.</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
-                    
-                    <!-- Web Lock (Security) -->
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 col-span-1 md:col-span-2">
-                        <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-emerald-600"></i> App Security & Web Lock</h3>
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" id="set-pin-enable" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onchange="togglePinFields(this.checked)">
-                            <label for="set-pin-enable" class="text-sm font-bold text-slate-700">Enable 4-Digit Web Lock (PIN on Startup)</label>
-                        </div>
-                        <div id="pin-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Current PIN <span class="text-xs text-slate-400 font-normal">(Leave blank if setting for first time)</span></label><input type="password" id="set-pin-current" maxlength="4" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg"></div>
-                            <div><label class="text-sm font-medium text-slate-700 block mb-1">New 4-Digit PIN</label><input type="password" id="set-pin-new" maxlength="4" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg"></div>
-                        </div>
+                        <button onclick="toggleProductModal(true)" class="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                        <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Business Profile</h3>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Business Name</label><input type="text" id="set-biz-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Business GSTIN</label><input type="text" id="set-biz-gstin" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Registered Address</label><input type="text" id="set-biz-address" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Contact Phone</label><input type="text" id="set-biz-phone" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">UPI Payment ID (For True QR Code)</label><input type="text" id="set-biz-upi" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none" placeholder="example@upi"></div>
-                        <div><label class="text-sm font-medium text-slate-700 block mb-1">Global Invoice Footer / T&C</label><textarea id="set-biz-terms" rows="2" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none resize-none" placeholder="Thank you for your business..."></textarea></div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                            <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Branding & Layout</h3>
-                            
+                    <div id="add-product-form" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 md:p-6 mb-6">
+                        <h3 class="font-bold mb-4">Add New Item</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                            <div class="md:col-span-2"><label class="text-sm font-medium text-slate-700 block mb-1">Product Name</label><input type="text" id="new-prod-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Base Rate (₹)</label><input type="number" id="new-prod-rate" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             <div>
-                                <label class="text-sm font-medium text-slate-700 block mb-1">Invoice Header Display Style</label>
-                                <select id="set-biz-logo-display" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none bg-white mb-4">
-                                    <option value="both">Show Both Logo & Business Name</option>
-                                    <option value="logo">Show Logo Only</option>
-                                    <option value="name">Show Business Name Only</option>
-                                </select>
+                                <label class="text-sm font-medium text-slate-700 block mb-1">GST %</label>
+                                <select id="new-prod-gst" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none"><option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option></select>
                             </div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Stock Qty</label><input type="number" id="new-prod-stock" value="0" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Batch No.</label><input type="text" id="new-prod-batch" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Expiry Date</label><input type="month" id="new-prod-expiry" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            
+                            <div class="flex gap-2 md:col-span-5 md:justify-end">
+                                <button onclick="toggleProductModal(false)" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
+                                <button onclick="saveProduct()" class="px-6 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save Product</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="inventory-list"></div>
+                </div>
 
-                            <div class="flex items-center gap-4">
-                                <div class="w-16 h-16 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden" id="logo-preview"><i data-lucide="image" class="text-slate-300"></i></div>
-                                <div class="flex-1">
-                                    <label class="text-sm font-medium text-slate-700 block mb-1">Upload Logo</label>
-                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'logo')" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                                </div>
+                <!-- Records View -->
+                <div id="view-records" class="tab-content w-full">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Sales Records</h2>
+                            <p class="text-slate-500">Advanced filtering, payment tracking, and bulk exports.</p>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="exportCSV()" class="flex-1 md:flex-none px-4 py-2 bg-white text-emerald-700 border border-emerald-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-50"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> CSV</button>
+                            <button onclick="bulkExportPDF()" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200"><i data-lucide="download" class="w-4 h-4"></i> Bulk PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-4 grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">Search</label>
+                            <div class="relative"><i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i><input type="text" id="filter-search" placeholder="Invoice ID or Name..." oninput="renderRecords()" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
+                        </div>
+                        <div><label class="text-xs font-medium text-slate-500 mb-1 block">Start Date</label><input type="date" id="filter-start" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
+                        <div><label class="text-xs font-medium text-slate-500 mb-1 block">End Date</label><input type="date" id="filter-end" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">Payment Status</label>
+                            <select id="filter-payment" onchange="renderRecords()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white"><option value="">All Statuses</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option></select>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm min-w-[900px]">
+                                <thead class="bg-slate-50 text-slate-600 border-b border-slate-100">
+                                    <tr><th class="p-4 font-medium">Invoice No.</th><th class="p-4 font-medium">Date</th><th class="p-4 font-medium">Client Name</th><th class="p-4 font-medium text-right">Amount</th><th class="p-4 font-medium text-center">Payment</th><th class="p-4 font-medium text-center">Action</th></tr>
+                                </thead>
+                                <tbody id="records-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clients View -->
+                <div id="view-clients" class="tab-content w-full">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                        <div class="w-full md:w-auto">
+                            <h2 class="text-2xl font-bold text-slate-800">Client CRM</h2>
+                            <p class="text-slate-500">Manage patient records and clinical notes.</p>
+                            <div class="mt-4 relative max-w-md"><i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i><input type="text" id="clients-search" placeholder="Search patients..." oninput="window.renderClients()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
+                        </div>
+                    </div>
+
+                    <div id="edit-client-form" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 mb-6 shadow-sm">
+                        <h3 class="font-bold mb-4">Edit Patient Profile</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Name</label><input type="text" id="edit-client-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Mobile</label><input type="text" id="edit-client-mobile" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">GSTIN</label><input type="text" id="edit-client-gstin" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Address</label><input type="text" id="edit-client-address" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div class="md:col-span-4"><label class="text-sm font-medium text-slate-700 block mb-1">Medical / Treatment Notes</label><textarea id="edit-client-notes" rows="2" placeholder="Ongoing treatments, allergies, preferences..." class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none resize-none"></textarea></div>
+                        </div>
+                        <div class="flex gap-2 mt-4 justify-end">
+                            <button onclick="toggleClientModal(false)" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
+                            <button onclick="saveClientEdit()" class="px-6 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save Changes</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="clients-list"></div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="view-settings" class="tab-content w-full">
+                    <div class="flex justify-between items-end mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">System Settings</h2>
+                            <p class="text-slate-500">Business profile and security configuration.</p>
+                        </div>
+                        <button onclick="handleLogout()" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-xl font-bold flex items-center gap-2 transition-all"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
+                        <!-- Web Lock -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 col-span-1 md:col-span-2">
+                            <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-emerald-600"></i> App Security & Web Lock</h3>
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" id="set-pin-enable" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onchange="togglePinFields(this.checked)">
+                                <label for="set-pin-enable" class="text-sm font-bold text-slate-700">Enable 4-Digit Web Lock (PIN on Startup)</label>
                             </div>
-                            <div class="flex items-center gap-4 pt-2 border-t border-slate-100 mt-4">
-                                <div class="w-24 h-12 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden" id="sig-preview"><i data-lucide="pen-tool" class="text-slate-300"></i></div>
-                                <div class="flex-1">
-                                    <label class="text-sm font-medium text-slate-700 block mb-1">Upload Signature</label>
-                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'signature')" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                                </div>
+                            <div id="pin-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div><label class="text-sm font-medium text-slate-700 block mb-1">Current PIN <span class="text-xs text-slate-400 font-normal">(Leave blank if setting for first time)</span></label><input type="password" id="set-pin-current" maxlength="4" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg"></div>
+                                <div><label class="text-sm font-medium text-slate-700 block mb-1">New 4-Digit PIN</label><input type="password" id="set-pin-new" maxlength="4" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg"></div>
                             </div>
                         </div>
 
+                        <!-- Business Profile -->
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                            <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">PDF Layout Template</h3>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button onclick="setTemplate('modern')" id="tpl-modern" class="p-3 border rounded-xl text-left border-emerald-500 bg-emerald-50"><div class="font-bold text-emerald-800">Modern</div><div class="text-xs text-emerald-600">Clean & Colored</div></button>
-                                <button onclick="setTemplate('classic')" id="tpl-classic" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800">Classic</div><div class="text-xs text-slate-500">Standard ERP</div></button>
-                                <button onclick="setTemplate('minimal')" id="tpl-minimal" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800">Minimal</div><div class="text-xs text-slate-500">No borders</div></button>
-                                <button onclick="setTemplate('compact')" id="tpl-compact" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800">Compact</div><div class="text-xs text-slate-500">Dense layout</div></button>
-                            </div>
+                            <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Business Profile</h3>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Business Name</label><input type="text" id="set-biz-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Business GSTIN</label><input type="text" id="set-biz-gstin" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Registered Address</label><input type="text" id="set-biz-address" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Contact Phone</label><input type="text" id="set-biz-phone" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">UPI Payment ID (For True QR Code)</label><input type="text" id="set-biz-upi" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none" placeholder="example@upi"></div>
+                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Global Invoice Footer / T&C</label><textarea id="set-biz-terms" rows="2" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none resize-none" placeholder="Thank you for your business..."></textarea></div>
                         </div>
-                        
-                        <button onclick="saveSettings()" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="save" class="w-5 h-5"></i> Save All Settings</button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Invoice Viewer Modal (Wider format for perfect A4 rendering) -->
-        <div id="invoice-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-            <div class="bg-slate-100 rounded-2xl shadow-2xl w-full max-w-4xl h-[95vh] flex flex-col overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-white flex justify-between items-center z-10 relative">
-                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-text"></i> PDF Preview</h3>
-                    <div class="flex gap-2">
-                        <button onclick="downloadPDF()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium flex gap-2 items-center"><i data-lucide="download" class="w-4 h-4"></i> Download PDF</button>
-                        <button onclick="closeInvoiceModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
+                        <!-- Branding & Layout -->
+                        <div class="space-y-6">
+                            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                                <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Branding & Layout</h3>
+                                <div>
+                                    <label class="text-sm font-medium text-slate-700 block mb-1">Invoice Header Display Style</label>
+                                    <select id="set-biz-logo-display" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none bg-white mb-4">
+                                        <option value="both">Show Both Logo & Business Name</option><option value="logo">Show Logo Only</option><option value="name">Show Business Name Only</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden" id="logo-preview"><i data-lucide="image" class="text-slate-300"></i></div>
+                                    <div class="flex-1"><label class="text-sm font-medium text-slate-700 block mb-1">Upload Logo</label><input type="file" accept="image/*" onchange="handleImageUpload(event, 'logo')" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"></div>
+                                </div>
+                                <div class="flex items-center gap-4 pt-2 border-t border-slate-100 mt-4">
+                                    <div class="w-24 h-12 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden" id="sig-preview"><i data-lucide="pen-tool" class="text-slate-300"></i></div>
+                                    <div class="flex-1"><label class="text-sm font-medium text-slate-700 block mb-1">Upload Signature</label><input type="file" accept="image/*" onchange="handleImageUpload(event, 'signature')" class="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                                <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">PDF Layout Template</h3>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button onclick="setTemplate('modern')" id="tpl-modern" class="p-3 border rounded-xl text-left border-emerald-500 bg-emerald-50"><div class="font-bold text-emerald-800">Modern</div><div class="text-xs text-emerald-600">Clean & Colored</div></button>
+                                    <button onclick="setTemplate('classic')" id="tpl-classic" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800">Classic</div><div class="text-xs text-slate-500">Standard ERP</div></button>
+                                    <button onclick="setTemplate('minimal')" id="tpl-minimal" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800">Minimal</div><div class="text-xs text-slate-500">No borders</div></button>
+                                    <button onclick="setTemplate('compact')" id="tpl-compact" class="p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800">Compact</div><div class="text-xs text-slate-500">Dense layout</div></button>
+                                </div>
+                            </div>
+                            <button onclick="saveSettings()" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="save" class="w-5 h-5"></i> Save All Settings</button>
+                        </div>
                     </div>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center bg-slate-200/50">
-                    <!-- Standardized A4 Canvas area (210mm wide) -->
-                    <div id="invoice-render-area" class="bg-white shadow-xl w-[210mm] max-w-[210mm] min-h-[297mm] mx-auto px-10 py-12 relative text-slate-800 text-[13px] leading-relaxed"></div>
+            </div>
+
+            <!-- Invoice Viewer Modal -->
+            <div id="invoice-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+                <div class="bg-slate-100 rounded-2xl shadow-2xl w-full max-w-4xl h-[95vh] flex flex-col overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-white flex justify-between items-center z-10 relative">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-text"></i> PDF Preview</h3>
+                        <div class="flex gap-2">
+                            <button onclick="downloadPDF()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium flex gap-2 items-center"><i data-lucide="download" class="w-4 h-4"></i> Download PDF</button>
+                            <button onclick="closeInvoiceModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center bg-slate-200/50">
+                        <div id="invoice-render-area" class="bg-white shadow-xl w-[210mm] max-w-[210mm] min-h-[297mm] mx-auto px-10 py-12 relative text-slate-800 text-[13px] leading-relaxed"></div>
+                    </div>
                 </div>
             </div>
-        </div>
+            
+            <div id="bulk-render-area" class="hidden absolute left-[-9999px] top-0"></div>
+        </main>
         
-        <div id="bulk-render-area" class="hidden absolute left-[-9999px] top-0"></div>
-    </main>
-
-    <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-2 px-2 z-30 shadow-[0_-4px_24px_rgba(0,0,0,0.05)]" id="mobile-nav"></nav>
+        <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-2 px-2 z-30 shadow-[0_-4px_24px_rgba(0,0,0,0.05)]" id="mobile-nav"></nav>
+    </div>
 
     <!-- Firebase SDK & Core Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const defaultAppId = 'dev-ayurveda-pro-app';
+        const defaultAppId = 'dev-ayurveda-pro-auth';
         const appId = typeof __app_id !== 'undefined' ? __app_id : defaultAppId;
         const fallbackConfig = { apiKey: "AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og", authDomain: "dev-ayurveda.firebaseapp.com", projectId: "dev-ayurveda", storageBucket: "dev-ayurveda.firebasestorage.app", messagingSenderId: "40760282698", appId: "1:40760282698:web:20e31100eed712631ca0b3" };
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
@@ -501,9 +553,10 @@
 
         // Global State
         window.AppState = {
-            user: null, activeTab: 'invoice', products: [], clients: [], invoices: [], revenueChartInst: null,
-            settings: { businessName: 'Dev Ayurveda', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '' },
+            user: null, activeTab: 'dashboard', products: [], clients: [], invoices: [], revenueChartInst: null,
+            settings: { businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '' },
             editingProductId: null, editingClientId: null,
+            signupLogoBase64: '', signupSigBase64: '',
             draft: { id: '', items: [], discount: 0, discountType: 'fixed', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', client: { name: '', mobile: '', gstin: '', address: '' } }
         };
 
@@ -514,30 +567,99 @@
         ];
 
         const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt || 0);
+        lucide.createIcons();
 
-        async function initAuth() {
-            try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } 
-            catch (err) { console.error("Auth init failed:", err); }
-        }
+        // --- AUTHENTICATION SYSTEM ---
+        let authResolved = false;
 
-        initAuth().then(() => {
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    window.AppState.user = user;
-                    document.getElementById('user-id-display').textContent = user.uid;
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    
-                    const savedDraft = localStorage.getItem('ayur_draft_pro');
-                    if(savedDraft) { window.AppState.draft = JSON.parse(savedDraft); }
+        onAuthStateChanged(auth, (user) => {
+            authResolved = true;
+            if (user) {
+                window.AppState.user = user;
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById('user-id-display').textContent = user.email;
+                
+                const savedDraft = localStorage.getItem('ayur_draft_pro');
+                if(savedDraft) { window.AppState.draft = JSON.parse(savedDraft); }
 
-                    setupFirestoreListeners();
-                    renderNavigation();
-                    switchTab(window.AppState.activeTab);
-                }
-            });
+                setupFirestoreListeners();
+                renderNavigation();
+                switchTab(window.AppState.activeTab);
+            } else {
+                window.AppState.user = null;
+                document.getElementById('auth-container').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('hidden');
+            }
         });
 
-        // Generate Serial Invoice ID (e.g. DEVFEB001)
+        // Splash Screen Timer Logic (Minimum 2.5 seconds show)
+        setTimeout(() => {
+            const checkAuthAndDismiss = setInterval(() => {
+                if (authResolved) {
+                    clearInterval(checkAuthAndDismiss);
+                    const splash = document.getElementById('splash-screen');
+                    splash.classList.add('splash-exit');
+                    setTimeout(() => splash.classList.add('hidden'), 500); // Remove from DOM after fade
+                }
+            }, 100);
+        }, 2500);
+
+        window.toggleAuthMode = function(mode) {
+            document.getElementById('login-form').classList.toggle('hidden', mode === 'signup');
+            document.getElementById('signup-form').classList.toggle('hidden', mode === 'login');
+            document.getElementById('auth-title').textContent = mode === 'login' ? 'Welcome Back' : 'Create Account';
+            document.getElementById('auth-subtitle').textContent = mode === 'login' ? 'Sign in to access your dashboard.' : 'Setup your professional Ayurvedic ERP.';
+        }
+
+        window.handleLogin = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn'); btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>'; lucide.createIcons();
+            try {
+                await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value);
+            } catch (error) { alert("Login failed: " + error.message); }
+            finally { btn.innerHTML = 'Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i>'; lucide.createIcons(); }
+        }
+
+        window.handleSignupUpload = function(e, type) {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                if(type === 'logo') { window.AppState.signupLogoBase64 = ev.target.result; document.getElementById('signup-logo-preview').innerHTML = `<img src="${ev.target.result}" class="w-full h-full object-cover">`; }
+                if(type === 'signature') { window.AppState.signupSigBase64 = ev.target.result; document.getElementById('signup-sig-preview').innerHTML = `<img src="${ev.target.result}" class="w-full h-full object-cover">`; }
+            }; reader.readAsDataURL(file);
+        }
+
+        window.handleSignup = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('signup-btn'); btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>'; lucide.createIcons();
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-password').value);
+                
+                // Save initial settings upon signup
+                await setDoc(doc(db, 'artifacts', appId, 'users', cred.user.uid, 'config', 'settings'), {
+                    businessName: document.getElementById('signup-biz-name').value,
+                    owner: document.getElementById('signup-owner').value,
+                    phone: document.getElementById('signup-phone').value,
+                    gstin: document.getElementById('signup-gstin').value,
+                    address: document.getElementById('signup-address').value,
+                    logo: window.AppState.signupLogoBase64,
+                    signature: window.AppState.signupSigBase64,
+                    template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: ''
+                });
+            } catch (error) { alert("Signup failed: " + error.message); }
+            finally { btn.innerHTML = 'Create Account <i data-lucide="user-plus" class="w-4 h-4"></i>'; lucide.createIcons(); }
+        }
+
+        window.handleLogout = async function() {
+            if(confirm("Are you sure you want to sign out?")) {
+                sessionStorage.removeItem('ayur_unlocked');
+                await signOut(auth);
+            }
+        }
+
+        // --- CORE APP LOGIC ---
+
         window.getNextInvoiceId = function() {
             const monthStr = new Date().toLocaleString('default', { month: 'short' }).toUpperCase();
             const prefix = `DEV${monthStr}`;
@@ -552,34 +674,38 @@
 
         function setupFirestoreListeners() {
             const uid = window.AppState.user.uid;
-            onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'products'), (snap) => { 
+            
+            // Cleanup previous listeners if any (important for rapid login/logout)
+            if(window.unsubProducts) window.unsubProducts();
+            if(window.unsubClients) window.unsubClients();
+            if(window.unsubInvoices) window.unsubInvoices();
+            if(window.unsubSettings) window.unsubSettings();
+
+            window.unsubProducts = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'products'), (snap) => { 
                 window.AppState.products = snap.docs.map(d => ({id: d.id, ...d.data()})); 
                 if(window.AppState.activeTab === 'inventory' && window.renderInventory) window.renderInventory();
-                updateDashboard();
+                if(window.AppState.activeTab === 'dashboard') updateDashboard();
             });
-            onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'clients'), (snap) => { 
+            window.unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'clients'), (snap) => { 
                 window.AppState.clients = snap.docs.map(d => ({id: d.id, ...d.data()})); 
-                if(window.AppState.activeTab === 'clients') renderClients();
+                if(window.AppState.activeTab === 'clients') window.renderClients();
             });
-            onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'invoices'), (snap) => { 
+            window.unsubInvoices = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'invoices'), (snap) => { 
                 window.AppState.invoices = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt); 
-                
-                // Assign new Serial ID if draft is empty or has old format
                 if(!window.AppState.draft.id || window.AppState.draft.id.startsWith('INV-')) {
                     window.AppState.draft.id = getNextInvoiceId();
-                    if(window.AppState.activeTab === 'invoice') updateInvoiceUI();
+                    if(window.AppState.activeTab === 'invoice') window.updateInvoiceUI();
                 }
-
                 if(window.AppState.activeTab === 'records') window.renderRecords();
                 if(window.AppState.activeTab === 'dashboard') updateDashboard();
-                if(window.AppState.activeTab === 'clients') renderClients();
+                if(window.AppState.activeTab === 'clients') window.renderClients();
             });
-            onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'config', 'settings'), (docSnap) => {
+            window.unsubSettings = onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'config', 'settings'), (docSnap) => {
                 if (docSnap.exists()) { 
                     window.AppState.settings = { ...window.AppState.settings, ...docSnap.data() }; 
-                    populateSettingsUI(); 
+                    if(window.AppState.activeTab === 'settings') populateSettingsUI(); 
                     
-                    // Web Lock Check
+                    // Web Lock Check Execution
                     if(window.AppState.settings.pinEnabled && !sessionStorage.getItem('ayur_unlocked')) {
                         document.getElementById('pin-lock-screen').classList.add('active');
                         document.getElementById('pin-lock-screen').classList.remove('hidden');
@@ -588,7 +714,6 @@
             });
         }
 
-        // --- Web Lock PIN Security ---
         window.verifyPin = function() {
             const entered = document.getElementById('pin-input').value;
             if (entered === window.AppState.settings.pin) {
@@ -601,21 +726,13 @@
                 document.getElementById('pin-input').value = '';
             }
         }
-        window.togglePinFields = function(checked) {
-            document.getElementById('pin-fields').classList.toggle('hidden', !checked);
-        }
-
-        // --- Local QR Code Generator System ---
+        window.togglePinFields = function(checked) { document.getElementById('pin-fields').classList.toggle('hidden', !checked); }
         window.generateLocalQR = function(text) {
             if(!text) return '';
-            try {
-                // Generates an immediate Base64 rendering of the QR locally. Cannot fail.
-                const qr = new QRious({ value: text, size: 300, level: 'H' });
-                return qr.toDataURL('image/png');
-            } catch(e) { console.error("QR Fail", e); return ''; }
+            try { const qr = new QRious({ value: text, size: 300, level: 'H' }); return qr.toDataURL('image/png'); } 
+            catch(e) { return ''; }
         }
 
-        // --- Navigation ---
         function renderNavigation() {
             const desktopNav = document.getElementById('desktop-nav'); const mobileNav = document.getElementById('mobile-nav');
             desktopNav.innerHTML = ''; mobileNav.innerHTML = '';
@@ -643,12 +760,11 @@
             if(tabId === 'invoice') { restoreDraftToUI(); updateInvoiceUI(); }
             if(tabId === 'inventory' && window.renderInventory) window.renderInventory();
             if(tabId === 'records') { populateClientFilter(); window.renderRecords(); }
-            if(tabId === 'clients') renderClients();
+            if(tabId === 'clients') window.renderClients();
             if(tabId === 'settings') populateSettingsUI();
             window.scrollTo(0,0);
         }
 
-        // --- Dashboard Analytics ---
         function updateDashboard() {
             const invoices = window.AppState.invoices;
             const finalized = invoices.filter(i => i.status === 'final');
@@ -692,23 +808,17 @@
             `).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No sales data yet.</div>';
         }
 
-        // --- Smart Invoice Engine ---
         window.handleClientSearch = function(val) {
-            const suggDiv = document.getElementById('client-suggestions');
-            if(!val) { suggDiv.classList.add('hidden'); return; }
+            const suggDiv = document.getElementById('client-suggestions'); if(!val) { suggDiv.classList.add('hidden'); return; }
             const matches = window.AppState.clients.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
             if(matches.length === 0) { suggDiv.classList.add('hidden'); return; }
             suggDiv.innerHTML = matches.map(c => `<div class="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50" onclick='selectClient(${JSON.stringify(c).replace(/'/g, "&#39;")})'><div class="font-medium text-slate-800">${c.name}</div><div class="text-xs text-slate-500">Mob: ${c.mobile || 'N/A'}</div></div>`).join('');
             suggDiv.classList.remove('hidden');
         }
-
-        window.selectClient = function(c) {
-            window.AppState.draft.client = c; restoreDraftToUI(); document.getElementById('client-suggestions').classList.add('hidden'); updateInvoiceUI();
-        }
+        window.selectClient = function(c) { window.AppState.draft.client = c; restoreDraftToUI(); document.getElementById('client-suggestions').classList.add('hidden'); updateInvoiceUI(); }
 
         window.handleProductSearch = function(val) {
-            const suggDiv = document.getElementById('product-suggestions');
-            if(!val) { suggDiv.classList.add('hidden'); return; }
+            const suggDiv = document.getElementById('product-suggestions'); if(!val) { suggDiv.classList.add('hidden'); return; }
             const matches = window.AppState.products.filter(p => !p.isHidden && p.name.toLowerCase().includes(val.toLowerCase()));
             if(matches.length === 0) { suggDiv.classList.add('hidden'); return; }
             suggDiv.innerHTML = matches.map(p => `
@@ -719,50 +829,29 @@
             `).join('');
             suggDiv.classList.remove('hidden');
         }
-
         window.addDraftItem = function(p) {
-            const item = { id: Date.now().toString(), productId: p.id, name: p.name, rate: Number(p.rate), qty: 1, gst: Number(p.gst), batch: p.batch || '', expiry: p.expiry || '' };
-            window.AppState.draft.items.push(item);
-            document.getElementById('inv-product-search').value = ''; document.getElementById('product-suggestions').classList.add('hidden'); updateInvoiceUI();
+            window.AppState.draft.items.push({ id: Date.now().toString(), productId: p.id, name: p.name, rate: Number(p.rate), qty: 1, gst: Number(p.gst), batch: p.batch || '', expiry: p.expiry || '' });
+            document.getElementById('inv-product-search').value = ''; document.getElementById('product-suggestions').classList.add('hidden'); window.updateInvoiceUI();
         }
-
-        window.updateDraftField = function(field, val) {
-            if(field === 'discountType' || field === 'discount') { window.AppState.draft[field] = val; } 
-            else { window.AppState.draft[field] = val; }
-            updateInvoiceUI();
-        }
-
-        window.updateDraftItem = function(id, field, val) {
-            const item = window.AppState.draft.items.find(i => i.id === id);
-            if(item) { item[field] = Number(val); updateInvoiceUI(); }
-        }
-
-        window.removeDraftItem = function(id) { window.AppState.draft.items = window.AppState.draft.items.filter(i => i.id !== id); updateInvoiceUI(); }
-        window.setPaymentMode = function(mode) { window.AppState.draft.paymentMode = mode; updateInvoiceUI(); }
+        window.updateDraftField = function(field, val) { window.AppState.draft[field] = val; window.updateInvoiceUI(); }
+        window.updateDraftItem = function(id, field, val) { const item = window.AppState.draft.items.find(i => i.id === id); if(item) { item[field] = Number(val); window.updateInvoiceUI(); } }
+        window.removeDraftItem = function(id) { window.AppState.draft.items = window.AppState.draft.items.filter(i => i.id !== id); window.updateInvoiceUI(); }
+        window.setPaymentMode = function(mode) { window.AppState.draft.paymentMode = mode; window.updateInvoiceUI(); }
 
         window.calculateInvoiceTotals = function() {
             let subtotal = 0, totalTax = 0;
-            window.AppState.draft.items.forEach(item => {
-                const lineTotal = item.qty * item.rate;
-                totalTax += lineTotal * (item.gst / 100); subtotal += lineTotal;
-            });
-
+            window.AppState.draft.items.forEach(item => { const lineTotal = item.qty * item.rate; totalTax += lineTotal * (item.gst / 100); subtotal += lineTotal; });
             let discountInput = Number(window.AppState.draft.discount) || 0;
             let discountAmt = window.AppState.draft.discountType === 'percent' ? (subtotal * (discountInput / 100)) : discountInput;
             const grandTotal = Math.max(0, subtotal + totalTax - discountAmt);
 
-            document.getElementById('summary-subtotal').textContent = formatINR(subtotal);
-            document.getElementById('summary-tax').textContent = formatINR(totalTax);
-            document.getElementById('summary-grand').textContent = formatINR(grandTotal);
+            document.getElementById('summary-subtotal').textContent = formatINR(subtotal); document.getElementById('summary-tax').textContent = formatINR(totalTax); document.getElementById('summary-grand').textContent = formatINR(grandTotal);
 
             const qrWrapper = document.getElementById('qr-image-wrapper');
             if(grandTotal > 0 && window.AppState.draft.paymentMode === 'upi') {
                 const upiStr = `upi://pay?pa=${window.AppState.settings.upi || 'business@upi'}&pn=${encodeURIComponent(window.AppState.settings.businessName)}&am=${grandTotal.toFixed(2)}&cu=INR`;
                 qrWrapper.innerHTML = `<img src="${window.generateLocalQR(upiStr)}" class="w-[140px] h-[140px] block mx-auto rounded">`;
-            } else {
-                qrWrapper.innerHTML = `<div class="w-[140px] h-[140px] bg-slate-100 flex items-center justify-center text-slate-400 text-xs text-center">Add items<br>to generate QR</div>`;
-            }
-
+            } else { qrWrapper.innerHTML = `<div class="w-[140px] h-[140px] bg-slate-100 flex items-center justify-center text-slate-400 text-xs text-center">Add items<br>to generate QR</div>`; }
             return { subtotal, totalTax, grandTotal, discountAmountCalculated: discountAmt };
         }
 
@@ -779,10 +868,7 @@
 
         window.updateInvoiceUI = function() {
             localStorage.setItem('ayur_draft_pro', JSON.stringify(window.AppState.draft));
-
-            const tbody = document.getElementById('invoice-items-body');
-            const items = window.AppState.draft.items;
-            
+            const tbody = document.getElementById('invoice-items-body'); const items = window.AppState.draft.items;
             if(items.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr>`; } 
             else {
                 tbody.innerHTML = items.map(item => `
@@ -794,47 +880,31 @@
                         <td class="p-3 text-right font-medium text-emerald-700">${(item.qty * item.rate).toFixed(2)}</td>
                         <td class="p-3 text-center"><button onclick="removeDraftItem('${item.id}')" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
                     </tr>
-                `).join('');
-                lucide.createIcons();
+                `).join(''); lucide.createIcons();
             }
-
             const m = window.AppState.draft.paymentMode;
             document.getElementById('btn-mode-upi').className = `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${m === 'upi' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`;
             document.getElementById('btn-mode-cash').className = `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${m === 'cash' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`;
             if(m==='upi') { document.getElementById('qr-container').classList.remove('hidden'); document.getElementById('cash-container').classList.add('hidden'); } 
             else { document.getElementById('qr-container').classList.add('hidden'); document.getElementById('cash-container').classList.remove('hidden'); }
-
             document.getElementById('inv-id-display').textContent = window.AppState.draft.id;
             calculateInvoiceTotals();
         }
 
         window.resumeDraft = function(id) {
-            const inv = window.AppState.invoices.find(i => i.id === id);
-            if(!inv) return;
-            window.AppState.draft = JSON.parse(JSON.stringify(inv));
-            switchTab('invoice');
+            const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return;
+            window.AppState.draft = JSON.parse(JSON.stringify(inv)); switchTab('invoice');
         }
 
         window.saveInvoice = async function(status) {
-            const name = document.getElementById('inv-client-name').value.trim();
-            if(!name) return alert("Please specify a client name.");
+            const name = document.getElementById('inv-client-name').value.trim(); if(!name) return alert("Please specify a client name.");
             if(window.AppState.draft.items.length === 0) return alert("Add at least one product.");
-
             const totals = calculateInvoiceTotals();
-            const clientData = {
-                name: name, mobile: document.getElementById('inv-client-mobile').value,
-                gstin: document.getElementById('inv-client-gstin').value, address: document.getElementById('inv-client-address').value
-            };
-
-            const invoiceDoc = {
-                ...window.AppState.draft, client: clientData, status: status,
-                subtotal: totals.subtotal, totalTax: totals.totalTax, grandTotal: totals.grandTotal,
-                date: new Date().toISOString().split('T')[0], createdAt: Date.now()
-            };
+            const clientData = { name: name, mobile: document.getElementById('inv-client-mobile').value, gstin: document.getElementById('inv-client-gstin').value, address: document.getElementById('inv-client-address').value };
+            const invoiceDoc = { ...window.AppState.draft, client: clientData, status: status, subtotal: totals.subtotal, totalTax: totals.totalTax, grandTotal: totals.grandTotal, date: new Date().toISOString().split('T')[0], createdAt: Date.now() };
 
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', invoiceDoc.id), invoiceDoc);
-                
                 const existingClient = window.AppState.clients.find(c => c.name.toLowerCase() === name.toLowerCase());
                 if(existingClient) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', existingClient.id), clientData); } 
                 else { await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients'), { ...clientData, createdAt: serverTimestamp() }); }
@@ -842,164 +912,76 @@
                 if(status === 'final') {
                     for (const item of window.AppState.draft.items) {
                         const prod = window.AppState.products.find(p => p.id === item.productId);
-                        if (prod && typeof prod.stock === 'number') {
-                            const newStock = Math.max(0, prod.stock - item.qty);
-                            await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', prod.id), { stock: newStock });
-                        }
+                        if (prod && typeof prod.stock === 'number') { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', prod.id), { stock: Math.max(0, prod.stock - item.qty) }); }
                     }
                 }
-
                 alert(`Invoice ${status === 'final' ? 'Finalized' : 'Draft Saved'} successfully!`);
-                
                 if(status === 'final') {
                     window.AppState.draft = { id: getNextInvoiceId(), items: [], discount: 0, discountType: 'fixed', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', client: { name: '', mobile: '', gstin: '', address: '' } };
-                    localStorage.removeItem('ayur_draft_pro');
-                    restoreDraftToUI(); updateInvoiceUI();
+                    localStorage.removeItem('ayur_draft_pro'); restoreDraftToUI(); updateInvoiceUI();
                 }
-
             } catch (err) { console.error("Save failed", err); alert("Error saving invoice."); }
         }
 
-        // --- Inventory Manager ---
         window.toggleProductModal = function(show) {
             document.getElementById('add-product-form').classList.toggle('hidden', !show);
             if(!show) {
-                window.AppState.editingProductId = null;
-                document.getElementById('add-product-form').querySelector('h3').textContent = "Add New Item";
+                window.AppState.editingProductId = null; document.getElementById('add-product-form').querySelector('h3').textContent = "Add New Item";
                 ['name','rate','stock','batch','expiry'].forEach(id => document.getElementById(`new-prod-${id}`).value = (id==='stock'?'0':''));
             }
         }
-
         window.editProduct = function(id) {
             const p = window.AppState.products.find(x => x.id === id); if(!p) return;
             window.AppState.editingProductId = id;
-            document.getElementById('new-prod-name').value = p.name;
-            document.getElementById('new-prod-rate').value = p.rate;
-            document.getElementById('new-prod-gst').value = p.gst;
-            document.getElementById('new-prod-stock').value = p.stock || 0;
-            document.getElementById('new-prod-batch').value = p.batch || '';
-            document.getElementById('new-prod-expiry').value = p.expiry || '';
-            document.getElementById('add-product-form').querySelector('h3').textContent = "Edit Item";
-            toggleProductModal(true); window.scrollTo(0,0);
+            document.getElementById('new-prod-name').value = p.name; document.getElementById('new-prod-rate').value = p.rate;
+            document.getElementById('new-prod-gst').value = p.gst; document.getElementById('new-prod-stock').value = p.stock || 0;
+            document.getElementById('new-prod-batch').value = p.batch || ''; document.getElementById('new-prod-expiry').value = p.expiry || '';
+            document.getElementById('add-product-form').querySelector('h3').textContent = "Edit Item"; toggleProductModal(true); window.scrollTo(0,0);
         }
-
         window.saveProduct = async function() {
-            const name = document.getElementById('new-prod-name').value.trim();
-            const rate = document.getElementById('new-prod-rate').value;
-            const gst = document.getElementById('new-prod-gst').value;
-            const stock = document.getElementById('new-prod-stock').value;
-            const batch = document.getElementById('new-prod-batch').value;
-            const expiry = document.getElementById('new-prod-expiry').value;
-
+            const name = document.getElementById('new-prod-name').value.trim(); const rate = document.getElementById('new-prod-rate').value;
             if(!name || !rate) return alert("Name and Rate required.");
-            const payload = { name, rate: Number(rate), gst: Number(gst), stock: Number(stock), batch, expiry };
-
+            const payload = { name, rate: Number(rate), gst: Number(document.getElementById('new-prod-gst').value), stock: Number(document.getElementById('new-prod-stock').value), batch: document.getElementById('new-prod-batch').value, expiry: document.getElementById('new-prod-expiry').value };
             try {
                 if (window.AppState.editingProductId) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', window.AppState.editingProductId), payload); } 
                 else { await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products'), { ...payload, isHidden: false, createdAt: serverTimestamp() }); }
                 toggleProductModal(false);
             } catch(e) { console.error(e); alert("Failed to save product"); }
         }
-
         window.toggleHideProduct = async function(id, current) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', id), { isHidden: !current }); }
-
         window.renderInventory = function() {
             const query = (document.getElementById('inventory-search')?.value || '').toLowerCase();
             const filtered = window.AppState.products.filter(p => p.name.toLowerCase().includes(query));
-
             document.getElementById('inventory-list').innerHTML = filtered.map(p => `
                 <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between ${p.isHidden ? 'opacity-60 bg-slate-50' : ''}">
-                    <div>
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-bold text-slate-800 truncate pr-2">${p.name}</h4>
-                            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">GST ${p.gst}%</span>
-                        </div>
-                        <div class="text-2xl font-bold text-slate-700 mb-2">₹${p.rate}</div>
-                        ${(p.batch || p.expiry) ? `<div class="text-xs text-slate-500 mt-1 border-t border-slate-100 pt-2">Batch: ${p.batch||'N/A'} • Exp: ${p.expiry||'N/A'}</div>` : ''}
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
-                        <span class="text-xs ${p.stock <= 10 ? 'text-red-600 font-bold' : 'text-slate-500'}">Stock: ${p.stock || 0}</span>
-                        <div>
-                            <button onclick="editProduct('${p.id}')" class="text-xs text-blue-500 hover:text-blue-700 border border-slate-200 px-3 py-1 rounded hover:bg-blue-50 transition-colors mr-1">Edit</button>
-                            <button onclick="toggleHideProduct('${p.id}', ${p.isHidden})" class="text-xs text-slate-500 hover:text-emerald-600 border border-slate-200 px-3 py-1 rounded hover:bg-emerald-50 transition-colors">
-                                ${p.isHidden ? 'Unhide' : 'Archive'}
-                            </button>
-                        </div>
-                    </div>
+                    <div><div class="flex justify-between items-start mb-2"><h4 class="font-bold text-slate-800 truncate pr-2">${p.name}</h4><span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">GST ${p.gst}%</span></div>
+                    <div class="text-2xl font-bold text-slate-700 mb-2">₹${p.rate}</div>${(p.batch || p.expiry) ? `<div class="text-xs text-slate-500 mt-1 border-t border-slate-100 pt-2">Batch: ${p.batch||'N/A'} • Exp: ${p.expiry||'N/A'}</div>` : ''}</div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs ${p.stock <= 10 ? 'text-red-600 font-bold' : 'text-slate-500'}">Stock: ${p.stock || 0}</span><div><button onclick="editProduct('${p.id}')" class="text-xs text-blue-500 hover:text-blue-700 border border-slate-200 px-3 py-1 rounded hover:bg-blue-50 transition-colors mr-1">Edit</button><button onclick="toggleHideProduct('${p.id}', ${p.isHidden})" class="text-xs text-slate-500 hover:text-emerald-600 border border-slate-200 px-3 py-1 rounded hover:bg-emerald-50 transition-colors">${p.isHidden ? 'Unhide' : 'Archive'}</button></div></div>
                 </div>
             `).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No products found.</div>';
         }
 
-        // --- Records & Payment ---
         function populateClientFilter() {
-            const select = document.getElementById('filter-client');
-            if(!select) return; const currentVal = select.value;
-            select.innerHTML = '<option value="">All Clients</option>' + window.AppState.clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            select.value = currentVal;
+            const select = document.getElementById('filter-client'); if(!select) return; const currentVal = select.value;
+            select.innerHTML = '<option value="">All Clients</option>' + window.AppState.clients.map(c => `<option value="${c.name}">${c.name}</option>`).join(''); select.value = currentVal;
         }
-
-        window.togglePaymentStatus = async function(id, current) {
-            const newStatus = current === 'paid' ? 'unpaid' : 'paid';
-            await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', id), { paymentStatus: newStatus });
-        }
-
+        window.togglePaymentStatus = async function(id, current) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', id), { paymentStatus: current === 'paid' ? 'unpaid' : 'paid' }); }
         window.renderRecords = function() {
-            const query = document.getElementById('filter-search').value.toLowerCase();
-            const start = document.getElementById('filter-start').value;
-            const end = document.getElementById('filter-end').value;
-            const payStatus = document.getElementById('filter-payment').value;
-
-            const filtered = window.AppState.invoices.filter(i => {
-                const matchesQuery = i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query));
-                const matchesStart = start === "" || i.date >= start;
-                const matchesEnd = end === "" || i.date <= end;
-                const matchesPay = payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus;
-                return matchesQuery && matchesStart && matchesEnd && matchesPay;
-            });
-
+            const query = document.getElementById('filter-search').value.toLowerCase(); const start = document.getElementById('filter-start').value; const end = document.getElementById('filter-end').value; const payStatus = document.getElementById('filter-payment').value;
+            const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus); });
             document.getElementById('records-list').innerHTML = filtered.map(inv => `
-                <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white">
-                    <td class="p-4 font-mono text-emerald-700 text-sm">${inv.id}</td>
-                    <td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td>
-                    <td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td>
-                    <td class="p-4 text-right font-bold text-slate-800">${formatINR(inv.grandTotal)}</td>
-                    <td class="p-4 text-center">
-                        ${inv.status === 'draft' ? `<span class="text-xs text-amber-500">Draft</span>` : 
-                        `<button onclick="togglePaymentStatus('${inv.id}', '${inv.paymentStatus || 'unpaid'}')" class="text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-colors ${inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-sm' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'}">
-                            ${inv.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
-                        </button>`}
-                    </td>
-                    <td class="p-4 text-center">
-                        ${inv.status === 'draft' ? `<button onclick="resumeDraft('${inv.id}')" class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>`
-                        : `<button onclick="viewInvoice('${inv.id}')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View / PDF</button>`}
-                    </td>
-                </tr>
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white"><td class="p-4 font-mono text-emerald-700 text-sm">${inv.id}</td><td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td><td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td><td class="p-4 text-right font-bold text-slate-800">${formatINR(inv.grandTotal)}</td>
+                <td class="p-4 text-center">${inv.status === 'draft' ? `<span class="text-xs text-amber-500">Draft</span>` : `<button onclick="togglePaymentStatus('${inv.id}', '${inv.paymentStatus || 'unpaid'}')" class="text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-colors ${inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-sm' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'}">${inv.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</button>`}</td>
+                <td class="p-4 text-center">${inv.status === 'draft' ? `<button onclick="resumeDraft('${inv.id}')" class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>` : `<button onclick="viewInvoice('${inv.id}')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View / PDF</button>`}</td></tr>
             `).join('') || '<tr><td colspan="6" class="p-8 text-center text-slate-400">No records found matching filters.</td></tr>';
         }
 
         window.bulkExportPDF = async function() {
-            const query = document.getElementById('filter-search').value.toLowerCase();
-            const start = document.getElementById('filter-start').value;
-            const end = document.getElementById('filter-end').value;
-            const payStatus = document.getElementById('filter-payment').value;
-
-            const filtered = window.AppState.invoices.filter(i => {
-                const matchesQuery = i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query));
-                const matchesStart = start === "" || i.date >= start;
-                const matchesEnd = end === "" || i.date <= end;
-                const matchesPay = payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus;
-                return matchesQuery && matchesStart && matchesEnd && matchesPay && i.status === 'final';
-            });
-
-            if(filtered.length === 0) return alert("No finalized invoices found in current filter.");
-            if(filtered.length > 20 && !confirm(`Generate bulk PDF for ${filtered.length} invoices? This may take a moment.`)) return;
-
+            const query = document.getElementById('filter-search').value.toLowerCase(); const start = document.getElementById('filter-start').value; const end = document.getElementById('filter-end').value; const payStatus = document.getElementById('filter-payment').value;
+            const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus) && i.status === 'final'; });
+            if(filtered.length === 0) return alert("No finalized invoices found in current filter."); if(filtered.length > 20 && !confirm(`Generate bulk PDF for ${filtered.length} invoices? This may take a moment.`)) return;
             const bulkArea = document.getElementById('bulk-render-area'); bulkArea.innerHTML = ''; bulkArea.classList.remove('hidden');
-            filtered.forEach(inv => {
-                const wrapper = document.createElement('div'); wrapper.innerHTML = generateInvoiceHTML(inv);
-                wrapper.style.pageBreakAfter = 'always'; bulkArea.appendChild(wrapper);
-            });
-
+            filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; bulkArea.appendChild(wrapper); });
             await html2pdf().set({ margin: 0, filename: `Bulk_Invoices_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(bulkArea).save();
             bulkArea.innerHTML = ''; bulkArea.classList.add('hidden');
         }
@@ -1008,265 +990,92 @@
             const invoices = window.AppState.invoices; if(invoices.length === 0) return alert("No data to export");
             const headers = "Invoice ID,Date,Client Name,Phone,Subtotal,Tax,Discount,Grand Total,Status,Payment Status\n";
             const rows = invoices.map(i => `${i.id},${i.date},"${i.client.name || ''}",${i.client.mobile || ''},${i.subtotal},${i.totalTax},${i.discount},${i.grandTotal},${i.status},${i.paymentStatus||'unpaid'}`).join("\n");
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `DevAyurveda_Sales.csv`; link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `DevAyurveda_Sales.csv`; link.click();
         }
 
-        // --- Client CRM ---
-        window.toggleClientModal = function(show) {
-            document.getElementById('edit-client-form').classList.toggle('hidden', !show);
-            if(!show) window.AppState.editingClientId = null;
-        }
-
+        window.toggleClientModal = function(show) { document.getElementById('edit-client-form').classList.toggle('hidden', !show); if(!show) window.AppState.editingClientId = null; }
         window.editClient = function(id) {
-            const c = window.AppState.clients.find(x => x.id === id); if(!c) return;
-            window.AppState.editingClientId = id;
-            document.getElementById('edit-client-name').value = c.name || '';
-            document.getElementById('edit-client-mobile').value = c.mobile || '';
-            document.getElementById('edit-client-gstin').value = c.gstin || '';
-            document.getElementById('edit-client-address').value = c.address || '';
-            document.getElementById('edit-client-notes').value = c.notes || '';
+            const c = window.AppState.clients.find(x => x.id === id); if(!c) return; window.AppState.editingClientId = id;
+            document.getElementById('edit-client-name').value = c.name || ''; document.getElementById('edit-client-mobile').value = c.mobile || ''; document.getElementById('edit-client-gstin').value = c.gstin || ''; document.getElementById('edit-client-address').value = c.address || ''; document.getElementById('edit-client-notes').value = c.notes || '';
             toggleClientModal(true); window.scrollTo(0,0);
         }
-
         window.saveClientEdit = async function() {
-            if(!window.AppState.editingClientId) return;
-            const name = document.getElementById('edit-client-name').value.trim(); if(!name) return alert("Name is required");
-
-            const clientData = {
-                name, mobile: document.getElementById('edit-client-mobile').value,
-                gstin: document.getElementById('edit-client-gstin').value, address: document.getElementById('edit-client-address').value,
-                notes: document.getElementById('edit-client-notes').value
-            };
-            try { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', window.AppState.editingClientId), clientData); toggleClientModal(false); } 
-            catch(e) { console.error(e); alert("Failed to update client."); }
+            if(!window.AppState.editingClientId) return; const name = document.getElementById('edit-client-name').value.trim(); if(!name) return alert("Name is required");
+            const clientData = { name, mobile: document.getElementById('edit-client-mobile').value, gstin: document.getElementById('edit-client-gstin').value, address: document.getElementById('edit-client-address').value, notes: document.getElementById('edit-client-notes').value };
+            try { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', window.AppState.editingClientId), clientData); toggleClientModal(false); } catch(e) { console.error(e); alert("Failed to update client."); }
         }
-
         window.renderClients = function() {
-            const query = (document.getElementById('clients-search')?.value || '').toLowerCase();
-            const invoices = window.AppState.invoices;
+            const query = (document.getElementById('clients-search')?.value || '').toLowerCase(); const invoices = window.AppState.invoices;
             const filteredClients = window.AppState.clients.filter(c => c.name.toLowerCase().includes(query) || (c.mobile && c.mobile.includes(query)));
-            
             document.getElementById('clients-list').innerHTML = filteredClients.map(c => {
-                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final');
-            const clv = cInvoices.reduce((sum, i) => sum + i.grandTotal, 0);
-            
-            return `
-                <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">${c.name.charAt(0)}</div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-slate-800 truncate">${c.name}</h4>
-                            <div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div>
-                            <div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div>
-                        </div>
-                    </div>
-                    ${c.notes ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-3 border border-slate-100 line-clamp-2 italic"><strong>Notes:</strong> ${c.notes}</div>` : ''}
-                    <div><button onclick="editClient('${c.id}')" class="text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider w-full">Edit Profile & Notes</button></div>
-                </div>
-            `}).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No clients found.</div>';
+                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final'); const clv = cInvoices.reduce((sum, i) => sum + i.grandTotal, 0);
+                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between"><div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">${c.name.charAt(0)}</div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 truncate">${c.name}</h4><div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div></div><div class="text-right shrink-0"><div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div><div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div><div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div></div></div>${c.notes ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-3 border border-slate-100 line-clamp-2 italic"><strong>Notes:</strong> ${c.notes}</div>` : ''}<div><button onclick="editClient('${c.id}')" class="text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider w-full">Edit Profile & Notes</button></div></div>`
+            }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No clients found.</div>';
         }
 
-        // --- Settings & Final PDF Generation ---
         function populateSettingsUI() {
             const s = window.AppState.settings;
-            document.getElementById('set-biz-name').value = s.businessName || '';
-            document.getElementById('set-biz-gstin').value = s.gstin || '';
-            document.getElementById('set-biz-address').value = s.address || '';
-            document.getElementById('set-biz-phone').value = s.phone || '';
-            document.getElementById('set-biz-upi').value = s.upi || '';
-            document.getElementById('set-biz-terms').value = s.customTerms || '';
-            document.getElementById('set-biz-logo-display').value = s.logoDisplay || 'both';
-            document.getElementById('set-pin-enable').checked = s.pinEnabled || false;
-            togglePinFields(s.pinEnabled || false);
-            
+            document.getElementById('set-biz-name').value = s.businessName || ''; document.getElementById('set-biz-gstin').value = s.gstin || ''; document.getElementById('set-biz-address').value = s.address || ''; document.getElementById('set-biz-phone').value = s.phone || ''; document.getElementById('set-biz-upi').value = s.upi || ''; document.getElementById('set-biz-terms').value = s.customTerms || ''; document.getElementById('set-biz-logo-display').value = s.logoDisplay || 'both'; document.getElementById('set-pin-enable').checked = s.pinEnabled || false; togglePinFields(s.pinEnabled || false);
             if(s.logo) document.getElementById('logo-preview').innerHTML = `<img src="${s.logo}" class="w-full h-full object-contain">`;
             if(s.signature) document.getElementById('sig-preview').innerHTML = `<img src="${s.signature}" class="w-full h-full object-contain">`;
             setTemplate(s.template || 'modern');
         }
-
         window.handleImageUpload = function(event, type) {
-            const file = event.target.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const base64 = e.target.result; window.AppState.settings[type] = base64;
-                if(type === 'logo') document.getElementById('logo-preview').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`;
-                if(type === 'signature') document.getElementById('sig-preview').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`;
-            }; reader.readAsDataURL(file);
+            const file = event.target.files[0]; if(!file) return; const reader = new FileReader();
+            reader.onload = (e) => { const base64 = e.target.result; window.AppState.settings[type] = base64; if(type === 'logo') document.getElementById('logo-preview').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`; if(type === 'signature') document.getElementById('sig-preview').innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`; }; reader.readAsDataURL(file);
         }
-
-        window.setTemplate = function(tpl) {
-            window.AppState.settings.template = tpl;
-            ['modern', 'classic', 'minimal', 'compact'].forEach(t => {
-                document.getElementById(`tpl-${t}`).className = t === tpl ? 'p-3 border rounded-xl text-left border-emerald-500 bg-emerald-50' : 'p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white';
-            });
-        }
-
+        window.setTemplate = function(tpl) { window.AppState.settings.template = tpl; ['modern', 'classic', 'minimal', 'compact'].forEach(t => { document.getElementById(`tpl-${t}`).className = t === tpl ? 'p-3 border rounded-xl text-left border-emerald-500 bg-emerald-50' : 'p-3 border rounded-xl text-left border-slate-200 hover:border-emerald-300 bg-white'; }); }
         window.saveSettings = async function() {
             try {
-                const s = window.AppState.settings;
-                s.businessName = document.getElementById('set-biz-name').value;
-                s.gstin = document.getElementById('set-biz-gstin').value;
-                s.address = document.getElementById('set-biz-address').value;
-                s.phone = document.getElementById('set-biz-phone').value;
-                s.upi = document.getElementById('set-biz-upi').value;
-                s.customTerms = document.getElementById('set-biz-terms').value;
-                s.logoDisplay = document.getElementById('set-biz-logo-display').value;
-
-                // Handle Security Update
-                const wantPin = document.getElementById('set-pin-enable').checked;
-                const curPinInp = document.getElementById('set-pin-current').value;
-                const newPinInp = document.getElementById('set-pin-new').value;
-
-                if (wantPin && !s.pinEnabled) {
-                    if(newPinInp.length !== 4) return alert("New PIN must be exactly 4 digits.");
-                    s.pinEnabled = true; s.pin = newPinInp;
-                } else if (wantPin && s.pinEnabled && newPinInp.length === 4) {
-                    if(curPinInp !== s.pin) return alert("Current PIN is incorrect. Cannot update.");
-                    s.pin = newPinInp;
-                } else if (!wantPin) {
-                    s.pinEnabled = false; s.pin = '';
-                }
-
-                await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'config', 'settings'), s);
-                alert("Settings saved securely!");
-                
-                // Reset Pin UI fields
-                document.getElementById('set-pin-current').value = '';
-                document.getElementById('set-pin-new').value = '';
-
+                const s = window.AppState.settings; s.businessName = document.getElementById('set-biz-name').value; s.gstin = document.getElementById('set-biz-gstin').value; s.address = document.getElementById('set-biz-address').value; s.phone = document.getElementById('set-biz-phone').value; s.upi = document.getElementById('set-biz-upi').value; s.customTerms = document.getElementById('set-biz-terms').value; s.logoDisplay = document.getElementById('set-biz-logo-display').value;
+                const wantPin = document.getElementById('set-pin-enable').checked; const curPinInp = document.getElementById('set-pin-current').value; const newPinInp = document.getElementById('set-pin-new').value;
+                if (wantPin && !s.pinEnabled) { if(newPinInp.length !== 4) return alert("New PIN must be exactly 4 digits."); s.pinEnabled = true; s.pin = newPinInp; } 
+                else if (wantPin && s.pinEnabled && newPinInp.length === 4) { if(curPinInp !== s.pin) return alert("Current PIN is incorrect."); s.pin = newPinInp; } 
+                else if (!wantPin) { s.pinEnabled = false; s.pin = ''; }
+                await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'config', 'settings'), s); alert("Settings saved securely!");
+                document.getElementById('set-pin-current').value = ''; document.getElementById('set-pin-new').value = '';
             } catch(e) { console.error(e); alert("Failed to save settings."); }
         }
 
-        window.viewInvoice = function(id) {
-            const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return;
-            document.getElementById('invoice-render-area').innerHTML = generateInvoiceHTML(inv);
-            document.getElementById('invoice-modal').classList.remove('hidden');
-        }
-
+        window.viewInvoice = function(id) { const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; document.getElementById('invoice-render-area').innerHTML = generateInvoiceHTML(inv); document.getElementById('invoice-modal').classList.remove('hidden'); }
         window.closeInvoiceModal = function() { document.getElementById('invoice-modal').classList.add('hidden'); }
-
-        window.downloadPDF = function() {
-            const element = document.getElementById('invoice-render-area');
-            const invId = element.querySelector('.inv-id-tracker').dataset.id;
-            // Increased scale for sharp render, fixed margin ensures no clipping on strict A4 boundary
-            html2pdf().set({ margin: 0, filename: `${invId}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 3, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save();
-        }
+        window.downloadPDF = function() { const element = document.getElementById('invoice-render-area'); const invId = element.querySelector('.inv-id-tracker').dataset.id; html2pdf().set({ margin: 0, filename: `${invId}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 3, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save(); }
 
         function generateInvoiceHTML(inv) {
             const s = window.AppState.settings; const tpl = s.template || 'modern';
-            
-            let paymentQR = '';
-            if(inv.grandTotal > 0 && s.upi) {
-                const upiStr = `upi://pay?pa=${s.upi}&pn=${encodeURIComponent(s.businessName)}&am=${inv.grandTotal.toFixed(2)}&cu=INR`;
-                paymentQR = `<img src="${window.generateLocalQR(upiStr)}" class="w-24 h-24 border border-slate-200 p-1.5 rounded-lg bg-white shadow-sm">`;
-            }
-            const digitalURL = `https://dev-ayurveda.web.app/verify/${inv.id}`;
-            const digitalQR = `<img src="${window.generateLocalQR(digitalURL)}" class="w-24 h-24 border border-slate-200 p-1.5 rounded-lg bg-white shadow-sm">`;
+            let paymentQR = ''; if(inv.grandTotal > 0 && s.upi) { const upiStr = `upi://pay?pa=${s.upi}&pn=${encodeURIComponent(s.businessName)}&am=${inv.grandTotal.toFixed(2)}&cu=INR`; paymentQR = `<img src="${window.generateLocalQR(upiStr)}" class="w-24 h-24 border border-slate-200 p-1.5 rounded-lg bg-white shadow-sm">`; }
+            const digitalURL = `https://dev-ayurveda.web.app/verify/${inv.id}`; const digitalQR = `<img src="${window.generateLocalQR(digitalURL)}" class="w-24 h-24 border border-slate-200 p-1.5 rounded-lg bg-white shadow-sm">`;
 
-            let logoHtml = '';
-            const dispStyle = s.logoDisplay || 'both';
+            let logoHtml = ''; const dispStyle = s.logoDisplay || 'both';
             if (dispStyle === 'logo' && s.logo) logoHtml = `<img src="${s.logo}" class="h-20 object-contain max-w-[250px]">`;
             else if (dispStyle === 'name') logoHtml = `<h1 class="text-3xl font-bold text-emerald-800 tracking-tight">${s.businessName}</h1>`;
             else logoHtml = `<div class="flex items-center gap-4">${s.logo ? `<img src="${s.logo}" class="h-16 object-contain max-w-[200px]">` : ''}<h1 class="text-3xl font-bold text-emerald-800 tracking-tight">${s.businessName}</h1></div>`;
 
             const sigHtml = s.signature ? `<img src="${s.signature}" class="h-14 object-contain mx-auto mb-2">` : `<div class="h-14 border-b-2 border-slate-200 mb-2 mx-4 w-40"></div>`;
-
             const itemsHtml = inv.items.map((item, idx) => `
-                <tr class="border-b border-slate-200">
-                    <td class="py-3 text-center align-top">${idx + 1}</td>
-                    <td class="py-3 align-top">
-                        <div class="font-bold text-slate-800">${item.name}</div>
-                        ${(item.batch || item.expiry) ? `<div class="text-[10px] text-slate-500 mt-1 font-medium">Batch: ${item.batch||'-'} | Exp: ${item.expiry||'-'}</div>` : ''}
-                    </td>
-                    <td class="py-3 text-center align-top font-medium">${item.qty}</td>
-                    <td class="py-3 text-right align-top text-slate-600">₹${item.rate.toFixed(2)}</td>
-                    <td class="py-3 text-center align-top text-slate-600">${item.gst}%</td>
-                    <td class="py-3 text-right font-bold align-top text-slate-800">₹${(item.qty * item.rate).toFixed(2)}</td>
-                </tr>
+                <tr class="border-b border-slate-200"><td class="py-3 text-center align-top">${idx + 1}</td><td class="py-3 align-top"><div class="font-bold text-slate-800">${item.name}</div>${(item.batch || item.expiry) ? `<div class="text-[10px] text-slate-500 mt-1 font-medium">Batch: ${item.batch||'-'} | Exp: ${item.expiry||'-'}</div>` : ''}</td><td class="py-3 text-center align-top font-medium">${item.qty}</td><td class="py-3 text-right align-top text-slate-600">₹${item.rate.toFixed(2)}</td><td class="py-3 text-center align-top text-slate-600">${item.gst}%</td><td class="py-3 text-right font-bold align-top text-slate-800">₹${(item.qty * item.rate).toFixed(2)}</td></tr>
             `).join('');
 
             return `
             <div class="inv-id-tracker font-sans relative w-full h-full flex flex-col justify-between" data-id="${inv.id}">
                 ${tpl === 'modern' ? '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-emerald-600"></div>' : ''}
-                
                 <div>
                     <div class="flex justify-between items-start mb-12">
-                        <div class="max-w-[60%]">
-                            ${logoHtml}
-                            <div class="mt-4 text-[13px] text-slate-500 leading-relaxed">
-                                ${s.address ? `<div>${s.address}</div>` : ''}
-                                ${s.phone ? `<div class="mt-1">📞 ${s.phone}</div>` : ''}
-                                ${s.gstin ? `<div class="font-bold mt-1 text-slate-700">GSTIN: ${s.gstin}</div>` : ''}
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <h2 class="text-5xl font-light text-slate-300 uppercase tracking-widest mb-3">Invoice</h2>
-                            <div class="font-bold text-slate-800 text-xl tracking-wide">${inv.id}</div>
-                            <div class="text-slate-500 font-medium mt-1">Date: ${inv.date}</div>
-                            <div class="inline-block mt-3 px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-full border border-slate-200">Status: ${inv.status}</div>
-                        </div>
+                        <div class="max-w-[60%]">${logoHtml}<div class="mt-4 text-[13px] text-slate-500 leading-relaxed">${s.address ? `<div>${s.address}</div>` : ''}${s.phone ? `<div class="mt-1">📞 ${s.phone}</div>` : ''}${s.gstin ? `<div class="font-bold mt-1 text-slate-700">GSTIN: ${s.gstin}</div>` : ''}</div></div>
+                        <div class="text-right"><h2 class="text-5xl font-light text-slate-300 uppercase tracking-widest mb-3">Invoice</h2><div class="font-bold text-slate-800 text-xl tracking-wide">${inv.id}</div><div class="text-slate-500 font-medium mt-1">Date: ${inv.date}</div><div class="inline-block mt-3 px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-full border border-slate-200">Status: ${inv.status}</div></div>
                     </div>
-
                     <div class="mb-10 border-l-4 ${tpl === 'modern' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-800 bg-slate-50'} p-5 rounded-r-xl">
-                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To:</div>
-                        <h3 class="text-xl font-bold text-slate-800">${inv.client.name}</h3>
-                        <div class="text-[13px] text-slate-600 mt-2 grid grid-cols-2 gap-2">
-                            ${inv.client.mobile ? `<div>📞 ${inv.client.mobile}</div>` : ''}
-                            ${inv.client.gstin ? `<div class="font-bold text-slate-800">🏢 GSTIN: ${inv.client.gstin}</div>` : ''}
-                            ${inv.client.address ? `<div class="col-span-2 mt-1">📍 ${inv.client.address}</div>` : ''}
-                        </div>
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To:</div><h3 class="text-xl font-bold text-slate-800">${inv.client.name}</h3><div class="text-[13px] text-slate-600 mt-2 grid grid-cols-2 gap-2">${inv.client.mobile ? `<div>📞 ${inv.client.mobile}</div>` : ''}${inv.client.gstin ? `<div class="font-bold text-slate-800">🏢 GSTIN: ${inv.client.gstin}</div>` : ''}${inv.client.address ? `<div class="col-span-2 mt-1">📍 ${inv.client.address}</div>` : ''}</div>
                     </div>
-
-                    <table class="w-full text-left mb-10">
-                        <thead class="${tpl === 'minimal' ? 'border-b-2 border-slate-800 text-slate-800' : 'bg-slate-800 text-white'}">
-                            <tr>
-                                <th class="py-3 px-2 text-center w-12 rounded-tl-lg">#</th>
-                                <th class="py-3 px-2">Description</th>
-                                <th class="py-3 px-2 text-center w-16">Qty</th>
-                                <th class="py-3 px-2 text-right w-24">Rate</th>
-                                <th class="py-3 px-2 text-center w-20">GST</th>
-                                <th class="py-3 px-2 text-right w-36 rounded-tr-lg">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-slate-700">${itemsHtml}</tbody>
-                    </table>
-
-                    <div class="flex justify-end mb-10">
-                        <div class="w-80 space-y-3 text-[13px]">
-                            <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500 font-medium">Subtotal:</span><span class="font-bold text-slate-800">₹${inv.subtotal.toFixed(2)}</span></div>
-                            <div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500 font-medium">GST Tax:</span><span class="font-bold text-slate-800">₹${inv.totalTax.toFixed(2)}</span></div>
-                            ${inv.discount > 0 ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-emerald-600 font-medium"><span>Discount (${inv.discountType === 'percent' ? inv.discount+'%' : '₹'}):</span><span>- ₹${(inv.subtotal + inv.totalTax - inv.grandTotal).toFixed(2)}</span></div>` : ''}
-                            <div class="flex justify-between items-end pt-3">
-                                <span class="text-lg font-bold text-slate-800">Grand Total:</span>
-                                <span class="text-3xl font-black ${tpl === 'modern' ? 'text-emerald-700' : 'text-slate-900'}">₹${inv.grandTotal.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
-
+                    <table class="w-full text-left mb-10"><thead class="${tpl === 'minimal' ? 'border-b-2 border-slate-800 text-slate-800' : 'bg-slate-800 text-white'}"><tr><th class="py-3 px-2 text-center w-12 rounded-tl-lg">#</th><th class="py-3 px-2">Description</th><th class="py-3 px-2 text-center w-16">Qty</th><th class="py-3 px-2 text-right w-24">Rate</th><th class="py-3 px-2 text-center w-20">GST</th><th class="py-3 px-2 text-right w-36 rounded-tr-lg">Amount</th></tr></thead><tbody class="text-slate-700">${itemsHtml}</tbody></table>
+                    <div class="flex justify-end mb-10"><div class="w-80 space-y-3 text-[13px]"><div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500 font-medium">Subtotal:</span><span class="font-bold text-slate-800">₹${inv.subtotal.toFixed(2)}</span></div><div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500 font-medium">GST Tax:</span><span class="font-bold text-slate-800">₹${inv.totalTax.toFixed(2)}</span></div>${inv.discount > 0 ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-emerald-600 font-medium"><span>Discount (${inv.discountType === 'percent' ? inv.discount+'%' : '₹'}):</span><span>- ₹${(inv.subtotal + inv.totalTax - inv.grandTotal).toFixed(2)}</span></div>` : ''}<div class="flex justify-between items-end pt-3"><span class="text-lg font-bold text-slate-800">Grand Total:</span><span class="text-3xl font-black ${tpl === 'modern' ? 'text-emerald-700' : 'text-slate-900'}">₹${inv.grandTotal.toFixed(2)}</span></div></div></div>
                     ${inv.notes ? `<div class="mb-10 p-5 bg-slate-50 border border-slate-100 rounded-xl text-[13px]"><div class="font-bold text-slate-800 mb-2 flex items-center gap-2"><svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Medical Notes / Special Instructions:</div><div class="text-slate-600 whitespace-pre-wrap leading-relaxed">${inv.notes}</div></div>` : ''}
                 </div>
-
                 <div class="mt-auto">
-                    <div class="flex justify-between items-end pt-8 border-t-2 border-slate-100">
-                        <div class="flex gap-8">
-                            ${paymentQR ? `<div class="text-center">${paymentQR}<div class="text-[10px] font-bold text-emerald-700 mt-2 uppercase tracking-widest">Scan to Pay</div></div>` : ''}
-                            <div class="text-center">${digitalQR}<div class="text-[10px] font-bold text-slate-500 mt-2 uppercase tracking-widest">Digital Copy</div></div>
-                        </div>
-                        <div class="text-center">
-                            ${sigHtml}
-                            <div class="text-[13px] font-bold text-slate-800">Authorized Signatory</div>
-                            <div class="text-[11px] text-slate-500 mt-1 font-medium tracking-wide">${s.businessName}</div>
-                        </div>
-                    </div>
+                    <div class="flex justify-between items-end pt-8 border-t-2 border-slate-100"><div class="flex gap-8">${paymentQR ? `<div class="text-center">${paymentQR}<div class="text-[10px] font-bold text-emerald-700 mt-2 uppercase tracking-widest">Scan to Pay</div></div>` : ''}<div class="text-center">${digitalQR}<div class="text-[10px] font-bold text-slate-500 mt-2 uppercase tracking-widest">Digital Copy</div></div></div><div class="text-center">${sigHtml}<div class="text-[13px] font-bold text-slate-800">Authorized Signatory</div><div class="text-[11px] text-slate-500 mt-1 font-medium tracking-wide">${s.businessName}</div></div></div>
                     <div class="text-center mt-10 text-[12px] font-medium text-slate-400 italic whitespace-pre-wrap px-12 leading-relaxed">${s.customTerms ? s.customTerms : `Thank you for your trust and business! For any queries regarding this invoice or your treatment, please contact us at ${s.phone || 'our registered numbers'}.`}</div>
                 </div>
-            </div>
-            `;
+            </div>`;
         }
     </script>
 </body>
