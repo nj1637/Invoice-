@@ -525,7 +525,7 @@
     </div>
     
     <!-- Invisible Area for Bulk PDF -->
-    <div id="bulk-render-area" class="fixed top-0 left-0 w-[210mm] z-[-9999] opacity-0 pointer-events-none bg-white"></div>
+    <div id="bulk-render-area" class="absolute top-[-99999px] left-0 w-[210mm] bg-white pointer-events-none"></div>
 
 
     <!-- Firebase SDK & Core Logic -->
@@ -922,11 +922,13 @@
             
             window.showToast("Generating Bulk PDF. Please wait...", "warning");
             const bulkArea = document.getElementById('bulk-render-area'); bulkArea.innerHTML = '';
-            filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; bulkArea.appendChild(wrapper); });
+            filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; wrapper.className = 'px-10 py-12'; bulkArea.appendChild(wrapper); });
             
-            await html2pdf().set({ margin: [10, 0], filename: `Bulk_Invoices_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(bulkArea).save();
-            bulkArea.innerHTML = '';
-            window.showToast("Bulk PDF Downloaded.");
+            setTimeout(async () => {
+                await html2pdf().set({ margin: 0, filename: `Bulk_Invoices_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(bulkArea).save();
+                bulkArea.innerHTML = '';
+                window.showToast("Bulk PDF Downloaded.");
+            }, 300);
         }
 
         window.exportCSV = function() {
