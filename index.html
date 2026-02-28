@@ -53,7 +53,7 @@
     <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- 1. Splash Screen -->
-    <div id="splash-screen" class="fixed inset-0 z-[200] bg-emerald-800 flex flex-col items-center justify-center transition-opacity duration-500">
+    <div id="splash-screen" class="fixed inset-0 z-[200] flex flex-col items-center justify-center transition-opacity duration-500" style="background-color: #065f46;">
         <div class="animate-pulse-slow flex flex-col items-center">
             <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-2xl mb-6">
                 <i data-lucide="leaf" class="w-12 h-12 text-emerald-600"></i>
@@ -172,6 +172,7 @@
                     <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="w-32 text-center text-3xl tracking-[0.5em] px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none transition-all">
                 </div>
                 <button onclick="verifyPin()" class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all text-lg">Unlock App</button>
+                <p id="pin-error" class="text-red-500 text-sm mt-3 hidden font-medium">Incorrect PIN. Try again.</p>
             </div>
         </div>
 
@@ -204,7 +205,6 @@
                         <p class="text-slate-500">Real-time overview of Dev Ayurveda performance.</p>
                     </div>
                     
-                    <!-- Stats Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-6">
                         <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-6 shadow-sm border-none md:col-span-2">
                             <div class="text-emerald-100 text-sm font-medium mb-1">Total Verified Revenue</div>
@@ -222,23 +222,17 @@
                         </div>
                     </div>
 
-                    <!-- Charts Row -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 lg:col-span-2 min-h-[300px] flex flex-col">
                             <h3 class="font-bold text-slate-700 mb-4">7-Day Revenue Trend</h3>
-                            <div class="flex-1 relative w-full h-full min-h-[250px]">
-                                <canvas id="revenueChart"></canvas>
-                            </div>
+                            <div class="flex-1 relative w-full h-full min-h-[250px]"><canvas id="revenueChart"></canvas></div>
                         </div>
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 min-h-[300px] flex flex-col">
                             <h3 class="font-bold text-slate-700 mb-4">Payment Methods</h3>
-                            <div class="flex-1 relative w-full h-full min-h-[200px] flex items-center justify-center">
-                                <canvas id="paymentPieChart"></canvas>
-                            </div>
+                            <div class="flex-1 relative w-full h-full min-h-[200px] flex items-center justify-center"><canvas id="paymentPieChart"></canvas></div>
                         </div>
                     </div>
 
-                    <!-- Lists Row -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col max-h-[400px]">
                             <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 shrink-0"><i data-lucide="clock" class="text-blue-500 w-5 h-5"></i> Recent Activity</h3>
@@ -278,7 +272,7 @@
                                         <div id="client-suggestions" class="hidden absolute z-30 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
                                     </div>
                                     <div><label class="text-sm font-medium text-slate-700 mb-1 block">Mobile Number</label><input type="tel" id="inv-client-mobile" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, mobile: this.value})"></div>
-                                    <div><label class="text-sm font-medium text-slate-700 mb-1 block">GSTIN (Optional)</label><input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, gstin: this.value})"></div>
+                                    <div><label class="text-sm font-medium text-slate-700 block mb-1">GSTIN (Optional)</label><input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, gstin: this.value})"></div>
                                     <div class="col-span-1 md:col-span-2"><label class="text-sm font-medium text-slate-700 mb-1 block">Address</label><input type="text" id="inv-client-address" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, address: this.value})"></div>
                                 </div>
                             </div>
@@ -527,7 +521,6 @@
     <!-- Invisible Area for Bulk PDF -->
     <div id="bulk-render-area" class="absolute top-[-99999px] left-0 w-[210mm] bg-white pointer-events-none"></div>
 
-
     <!-- Firebase SDK & Core Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -573,7 +566,6 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-
 
         // --- AUTHENTICATION SYSTEM ---
         let authResolved = false;
@@ -654,7 +646,6 @@
         }
 
         // --- CORE APP LOGIC ---
-
         window.getNextInvoiceId = function() {
             const monthStr = new Date().toLocaleString('default', { month: 'short' }).toUpperCase();
             const prefix = `DEV${monthStr}`;
@@ -919,10 +910,11 @@
             const query = document.getElementById('filter-search').value.toLowerCase(); const start = document.getElementById('filter-start').value; const end = document.getElementById('filter-end').value; const payStatus = document.getElementById('filter-payment').value;
             const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus) && i.status === 'final'; });
             if(filtered.length === 0) return window.showToast("No finalized invoices found in current filter.", "warning"); 
+            if(filtered.length > 20 && !confirm(`Generate bulk PDF for ${filtered.length} invoices? This may take a moment.`)) return;
             
             window.showToast("Generating Bulk PDF. Please wait...", "warning");
             const bulkArea = document.getElementById('bulk-render-area'); bulkArea.innerHTML = '';
-            filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; wrapper.className = 'px-10 py-12'; bulkArea.appendChild(wrapper); });
+            filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = window.generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; wrapper.className = 'px-10 py-12'; bulkArea.appendChild(wrapper); });
             
             setTimeout(async () => {
                 await html2pdf().set({ margin: 0, filename: `Bulk_Invoices_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(bulkArea).save();
@@ -956,10 +948,10 @@
 
         function populateSettingsUI() {
             const s = window.AppState.settings;
-            document.getElementById('set-biz-name').value = s.businessName || ''; document.getElementById('set-biz-gstin').value = s.gstin || ''; document.getElementById('set-biz-address').value = s.address || ''; document.getElementById('set-biz-phone').value = s.phone || ''; document.getElementById('set-biz-upi').value = s.upi || ''; document.getElementById('set-biz-terms').value = s.customTerms || ''; document.getElementById('set-biz-logo-display').value = s.logoDisplay || 'both'; document.getElementById('set-pin-enable').checked = s.pinEnabled || false; togglePinFields(s.pinEnabled || false);
+            document.getElementById('set-biz-name').value = s.businessName || ''; document.getElementById('set-biz-gstin').value = s.gstin || ''; document.getElementById('set-biz-address').value = s.address || ''; document.getElementById('set-biz-phone').value = s.phone || ''; document.getElementById('set-biz-upi').value = s.upi || ''; document.getElementById('set-biz-terms').value = s.customTerms || ''; document.getElementById('set-biz-logo-display').value = s.logoDisplay || 'both'; document.getElementById('set-pin-enable').checked = s.pinEnabled || false; window.togglePinFields(s.pinEnabled || false);
             if(s.logo) document.getElementById('logo-preview').innerHTML = `<img src="${s.logo}" class="w-full h-full object-contain">`;
             if(s.signature) document.getElementById('sig-preview').innerHTML = `<img src="${s.signature}" class="w-full h-full object-contain">`;
-            setTemplate(s.template || 'modern');
+            window.setTemplate(s.template || 'modern');
         }
         window.setTemplate = function(tpl) { 
             window.AppState.settings.template = tpl; 
@@ -981,11 +973,11 @@
             } catch(e) { window.showToast("Failed to save settings.", "error"); }
         }
 
-        window.viewInvoice = function(id) { const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; document.getElementById('invoice-render-area').innerHTML = generateInvoiceHTML(inv); document.getElementById('invoice-modal').style.display = 'flex'; }
+        window.viewInvoice = function(id) { const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; document.getElementById('invoice-render-area').innerHTML = window.generateInvoiceHTML(inv); document.getElementById('invoice-modal').style.display = 'flex'; }
         window.closeInvoiceModal = function() { document.getElementById('invoice-modal').style.display = 'none'; }
         window.downloadPDF = function() { window.showToast("Downloading PDF..."); const element = document.getElementById('invoice-render-area'); const invId = element.querySelector('.inv-id-tracker').dataset.id; html2pdf().set({ margin: 0, filename: `${invId}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 3, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save(); }
 
-        function generateInvoiceHTML(inv) {
+        window.generateInvoiceHTML = function(inv) {
             const s = window.AppState.settings; const tpl = s.template || 'modern';
             let paymentQR = ''; if(inv.grandTotal > 0 && s.upi) { const upiStr = `upi://pay?pa=${s.upi}&pn=${encodeURIComponent(s.businessName)}&am=${inv.grandTotal.toFixed(2)}&cu=INR`; paymentQR = `<img src="${window.generateLocalQR(upiStr)}" class="w-24 h-24 border border-slate-200 p-1.5 rounded-lg bg-white shadow-sm">`; }
             const digitalURL = `https://dev-ayurveda.web.app/verify/${inv.id}`; const digitalQR = `<img src="${window.generateLocalQR(digitalURL)}" class="w-24 h-24 border border-slate-200 p-1.5 rounded-lg bg-white shadow-sm">`;
@@ -1000,7 +992,6 @@
                 <tr class="border-b ${tpl === 'bold' ? 'border-black' : 'border-slate-200'}"><td class="py-3 text-center align-top">${idx + 1}</td><td class="py-3 align-top"><div class="font-bold text-slate-800">${item.name}</div>${(item.batch || item.expiry) ? `<div class="text-[10px] text-slate-500 mt-1 font-medium">Batch: ${item.batch||'-'} | Exp: ${item.expiry||'-'}</div>` : ''}</td><td class="py-3 text-center align-top font-medium">${item.qty}</td><td class="py-3 text-right align-top text-slate-600">₹${item.rate.toFixed(2)}</td><td class="py-3 text-center align-top text-slate-600">${item.gst}%</td><td class="py-3 text-right font-bold align-top text-slate-800">₹${(item.qty * item.rate).toFixed(2)}</td></tr>
             `).join('');
 
-            // Theme Specific Injections
             let headerStyles = ''; let tableHeadStyles = ''; let totalStyles = ''; let fontClass = 'font-sans';
             if(tpl === 'modern') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-emerald-600"></div>'; tableHeadStyles = 'bg-slate-800 text-white'; totalStyles = 'text-emerald-700'; }
             if(tpl === 'classic') { tableHeadStyles = 'border-b-2 border-slate-800 text-slate-800'; totalStyles = 'text-slate-900'; }
@@ -1024,10 +1015,7 @@
                         </div>
                         <div class="${tpl === 'elegant' ? 'text-center mt-6 w-full border-t border-slate-200 pt-4 flex justify-between' : 'text-right'}">
                             ${tpl !== 'elegant' ? `<h2 class="text-5xl font-light text-slate-300 uppercase tracking-widest mb-3 ${tpl==='bold' ? 'text-black font-black' : ''}">Invoice</h2>` : ''}
-                            <div>
-                                <div class="font-bold text-slate-800 text-xl tracking-wide">${inv.id}</div>
-                                <div class="text-slate-500 font-medium mt-1">Date: ${inv.date}</div>
-                            </div>
+                            <div><div class="font-bold text-slate-800 text-xl tracking-wide">${inv.id}</div><div class="text-slate-500 font-medium mt-1">Date: ${inv.date}</div></div>
                             <div class="inline-block mt-3 px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-full border border-slate-200">Status: ${inv.status}</div>
                         </div>
                     </div>
