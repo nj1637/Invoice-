@@ -30,6 +30,7 @@
     </script>
 
     <style>
+        body { background-color: #f8fafc; font-family: sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -47,7 +48,19 @@
         .splash-exit { opacity: 0; pointer-events: none; transition: opacity 0.5s ease-out; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans overflow-hidden h-screen relative">
+<body class="text-slate-900 font-sans overflow-hidden h-screen relative">
+
+    <!-- Global Crash Handler (Prevents silent blank white screens) -->
+    <div id="fatal-error" class="hidden fixed inset-0 z-[99999] bg-red-600 text-white p-8 flex-col items-center justify-center text-center">
+        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4"><svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>
+        <h1 class="text-3xl font-bold mb-2">System Error Intercepted</h1>
+        <p id="fatal-error-msg" class="text-red-100 font-mono text-sm max-w-xl mx-auto bg-red-900/50 p-4 rounded text-left overflow-x-auto whitespace-pre-wrap"></p>
+        <button onclick="window.location.reload()" class="mt-6 px-6 py-3 bg-white text-red-700 font-bold rounded-xl shadow-lg">Reload Application</button>
+    </div>
+    <script>
+        window.addEventListener('error', function(e) { const el = document.getElementById('fatal-error'); const msgEl = document.getElementById('fatal-error-msg'); if(el && msgEl) { el.style.display = 'flex'; msgEl.innerText = e.message + "\nLine: " + e.lineno; } });
+        window.addEventListener('unhandledrejection', function(e) { const el = document.getElementById('fatal-error'); const msgEl = document.getElementById('fatal-error-msg'); if(el && msgEl) { el.style.display = 'flex'; msgEl.innerText = "Async Error: " + (e.reason ? e.reason.message : 'Unknown rejection'); } });
+    </script>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
@@ -277,7 +290,7 @@
                                         <div id="client-suggestions" class="hidden absolute z-30 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
                                     </div>
                                     <div><label class="text-sm font-medium text-slate-700 mb-1 block">Mobile Number</label><input type="tel" id="inv-client-mobile" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, mobile: this.value})"></div>
-                                    <div><label class="text-sm font-medium text-slate-700 mb-1 block">GSTIN (Optional)</label><input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, gstin: this.value})"></div>
+                                    <div><label class="text-sm font-medium text-slate-700 block mb-1">GSTIN (Optional)</label><input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, gstin: this.value})"></div>
                                     <div id="wrap-duedate"><label class="text-sm font-medium text-slate-700 mb-1 block">Due Date</label><input type="date" id="inv-due-date" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('dueDate', this.value)"></div>
                                     <div class="col-span-1 md:col-span-3"><label class="text-sm font-medium text-slate-700 mb-1 block">Address / Shipping Details</label><input type="text" id="inv-client-address" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, address: this.value})"></div>
                                 </div>
@@ -292,7 +305,7 @@
                                     <div id="product-suggestions" class="hidden absolute z-20 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
                                 </div>
                                 <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100" id="invoice-items-wrapper">
-                                    <!-- Rendered dynamically -->
+                                    <!-- Rendered dynamically via JS to apply feature toggles cleanly -->
                                 </div>
                             </div>
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
@@ -596,33 +609,29 @@
                                     <button onclick="window.setTemplate('classic')" id="tpl-classic" class="p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800 text-sm">Classic</div></button>
                                     <button onclick="window.setTemplate('minimal')" id="tpl-minimal" class="p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800 text-sm">Minimal</div></button>
                                     <button onclick="window.setTemplate('compact')" id="tpl-compact" class="p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800 text-sm">Compact</div></button>
-                                    
                                     <button onclick="window.setTemplate('elegant')" id="tpl-elegant" class="p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800 text-sm font-serif">Elegant</div></button>
                                     <button onclick="window.setTemplate('bold')" id="tpl-bold" class="p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800 text-sm uppercase">Bold</div></button>
                                     <button onclick="window.setTemplate('nature')" id="tpl-nature" class="p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800 text-sm text-green-700">Nature</div></button>
                                     <button onclick="window.setTemplate('corporate')" id="tpl-corporate" class="p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white"><div class="font-bold text-slate-800 text-sm text-blue-800">Corporate</div></button>
                                 </div>
                             </div>
-                            <button onclick="saveSettings()" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="save" class="w-5 h-5"></i> Save All Settings</button>
+                            <button onclick="window.saveSettings()" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="save" class="w-5 h-5"></i> Save All Settings</button>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-        
         <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-2 px-2 z-30 shadow-[0_-4px_24px_rgba(0,0,0,0.05)]" id="mobile-nav"></nav>
     </div>
 
-    <!-- Modals (Kept safely outside app-container) -->
-    
-    <!-- Invoice Viewer Modal -->
+    <!-- Modals -->
     <div id="invoice-modal" class="fixed inset-0 z-[500] bg-slate-900/60 backdrop-blur-sm hidden flex-col items-center justify-center p-4">
         <div class="bg-slate-100 rounded-2xl shadow-2xl w-full max-w-4xl h-[95vh] flex flex-col overflow-hidden relative">
             <div class="p-4 border-b border-slate-200 bg-white flex justify-between items-center z-10 shrink-0 shadow-sm">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="file-text"></i> PDF Preview</h3>
                 <div class="flex gap-2">
-                    <button onclick="downloadPDF()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium flex gap-2 items-center hover:bg-emerald-700 transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Download</button>
-                    <button onclick="closeInvoiceModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
+                    <button onclick="window.downloadPDF()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium flex gap-2 items-center hover:bg-emerald-700 transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Download</button>
+                    <button onclick="window.closeInvoiceModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center bg-slate-200/50">
@@ -631,14 +640,13 @@
         </div>
     </div>
 
-    <!-- Client Ledger Modal -->
     <div id="ledger-modal" class="fixed inset-0 z-[500] bg-slate-900/60 backdrop-blur-sm hidden flex-col items-center justify-center p-4">
         <div class="bg-slate-100 rounded-2xl shadow-2xl w-full max-w-4xl h-[95vh] flex flex-col overflow-hidden relative">
             <div class="p-4 border-b border-slate-200 bg-white flex justify-between items-center z-10 shrink-0 shadow-sm">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="book-open"></i> Statement of Accounts</h3>
                 <div class="flex gap-2">
-                    <button onclick="downloadLedgerPDF()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium flex gap-2 items-center hover:bg-blue-700 transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Export Ledger</button>
-                    <button onclick="closeLedgerModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
+                    <button onclick="window.downloadLedgerPDF()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium flex gap-2 items-center hover:bg-blue-700 transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Export Ledger</button>
+                    <button onclick="window.closeLedgerModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center bg-slate-200/50">
@@ -647,12 +655,11 @@
         </div>
     </div>
     
-    <!-- 100% Reliable Invisible Area for Bulk PDF -->
-    <div id="bulk-render-container" class="fixed top-0 left-0 w-[210mm] z-[-1] opacity-0 pointer-events-none bg-white">
+    <!-- FIX: 100% Reliable Invisible Area for Bulk PDF -->
+    <div id="bulk-render-container" class="absolute top-[-9999px] left-[-9999px] w-[210mm] bg-white pointer-events-none">
         <div id="bulk-render-area" class="w-full bg-white text-slate-900"></div>
     </div>
 
-    <!-- Full Screen PDF Generator Blocking Overlay -->
     <div id="pdf-loading-overlay" class="fixed inset-0 z-[9999] bg-white hidden flex-col items-center justify-center">
         <i data-lucide="loader-2" class="w-12 h-12 text-emerald-600 animate-spin mb-4"></i>
         <h2 class="text-2xl font-bold text-slate-800 mb-2">Generating High-Res PDF...</h2>
@@ -669,12 +676,19 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : defaultAppId;
         const fallbackConfig = { apiKey: "AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og", authDomain: "dev-ayurveda.firebaseapp.com", projectId: "dev-ayurveda", storageBucket: "dev-ayurveda.firebasestorage.app", messagingSenderId: "40760282698", appId: "1:40760282698:web:20e31100eed712631ca0b3" };
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
-        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+        
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig); 
+            auth = getAuth(app); 
+            db = getFirestore(app);
+        } catch(e) {
+            console.error("Firebase Init Error:", e);
+        }
 
         const currencyMap = { 'INR': '₹', 'USD': '$', 'EUR': '€', 'GBP': '£' };
         const defaultFeatures = { expenses: true, multiDoc: true, currency: true, shipping: true, tds: true, rcm: true, hsn: true, dueDate: true, ledger: true, creditNote: true, margin: true, batch: true };
 
-        // Global State
         window.AppState = {
             user: null, activeTab: 'dashboard', products: [], clients: [], invoices: [], expenses: [], revenueChartInst: null, paymentPieChartInst: null,
             settings: { businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', seal: '', bankName: '', bankAcc: '', bankIfsc: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '', lockDate: '', features: defaultFeatures },
@@ -693,29 +707,190 @@
             { id: 'settings', icon: 'settings', label: 'Settings' }
         ];
 
+        // Safe DOM Setters
+        const setText = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+        const setHTML = (id, val) => { const el = document.getElementById(id); if(el) el.innerHTML = val; };
+        const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+
         window.formatCurrency = (amt, currency = 'INR') => { const symbol = currencyMap[currency] || '₹'; return `${symbol}${Number(amt || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`; };
         const formatINR = (amt) => window.formatCurrency(amt, 'INR');
         window.isFeatureEnabled = (key) => window.AppState.settings.features ? window.AppState.settings.features[key] !== false : true;
-        lucide.createIcons();
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        function populateSettingsUI() {
-            const s = window.AppState.settings;
-            const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
-            setVal('set-biz-name', s.businessName || ''); setVal('set-biz-gstin', s.gstin || ''); setVal('set-biz-address', s.address || ''); 
-            setVal('set-biz-phone', s.phone || ''); setVal('set-biz-upi', s.upi || ''); setVal('set-biz-terms', s.customTerms || ''); 
-            setVal('set-biz-logo-display', s.logoDisplay || 'both'); setVal('set-lock-date', s.lockDate || ''); 
-            setVal('set-bank-name', s.bankName || ''); setVal('set-bank-acc', s.bankAcc || ''); setVal('set-bank-ifsc', s.bankIfsc || '');
-            
-            const pinEl = document.getElementById('set-pin-enable'); if(pinEl) { pinEl.checked = s.pinEnabled || false; window.togglePinFields(s.pinEnabled || false); }
-            
-            if(s.logo) document.getElementById('logo-preview').innerHTML = `<img src="${s.logo}" class="w-full h-full object-contain">`;
-            if(s.signature) document.getElementById('sig-preview').innerHTML = `<img src="${s.signature}" class="w-full h-full object-contain">`;
-            if(s.seal) document.getElementById('seal-preview').innerHTML = `<img src="${s.seal}" class="w-full h-full object-contain">`;
-            window.setTemplate(s.template || 'modern');
+        let authResolved = false;
 
-            const f = s.features || defaultFeatures;
-            const toggles = ['expenses', 'multiDoc', 'currency', 'shipping', 'tds', 'rcm', 'hsn', 'dueDate', 'ledger', 'creditNote', 'margin', 'batch'];
-            toggles.forEach(t => { const el = document.getElementById(`feat-${t}`); if(el) el.checked = f[t] !== false; });
+        async function initAuth() {
+            try { 
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && auth) {
+                    await signInWithCustomToken(auth, __initial_auth_token); 
+                }
+            } catch (err) { console.error("Auth init failed:", err); }
+        }
+
+        if (auth) initAuth();
+
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                authResolved = true;
+                if (user) {
+                    window.AppState.user = user;
+                    const authC = document.getElementById('auth-container'); if(authC) authC.style.display = 'none';
+                    const appC = document.getElementById('app-container'); if(appC) appC.style.display = 'flex';
+                    setText('user-id-display', user.email || user.uid);
+                    
+                    const savedDraft = localStorage.getItem('ayur_draft_pro');
+                    if(savedDraft) { window.AppState.draft = JSON.parse(savedDraft); }
+
+                    setupFirestoreListeners();
+                    renderNavigation();
+                    switchTab(window.AppState.activeTab);
+                } else {
+                    window.AppState.user = null;
+                    const authC = document.getElementById('auth-container'); if(authC) authC.style.display = 'block';
+                    const appC = document.getElementById('app-container'); if(appC) appC.style.display = 'none';
+                }
+            });
+        }
+
+        setTimeout(() => {
+            const checkAuthAndDismiss = setInterval(() => {
+                if (authResolved || !auth) {
+                    clearInterval(checkAuthAndDismiss);
+                    const splash = document.getElementById('splash-screen');
+                    if(splash) {
+                        splash.classList.add('splash-exit');
+                        setTimeout(() => splash.classList.add('hidden'), 500);
+                    }
+                }
+            }, 100);
+        }, 2000);
+
+        window.toggleAuthMode = function(mode) {
+            const lForm = document.getElementById('login-form'); if(lForm) lForm.classList.toggle('hidden', mode === 'signup');
+            const sForm = document.getElementById('signup-form'); if(sForm) sForm.classList.toggle('hidden', mode === 'login');
+            setText('auth-title', mode === 'login' ? 'Welcome Back' : 'Create Account');
+            setText('auth-subtitle', mode === 'login' ? 'Sign in to access your dashboard.' : 'Setup your professional Ayurvedic ERP.');
+        }
+
+        window.handleLogin = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn'); if(btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons();
+            try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value); } 
+            catch (error) { window.showToast("Login failed: " + error.message, "error"); }
+            finally { if(btn) btn.innerHTML = 'Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+        }
+
+        window.handleSignupUpload = function(e, type) {
+            const file = e.target.files[0]; if(!file) return; const reader = new FileReader();
+            reader.onload = (ev) => {
+                if(type === 'logo') { window.AppState.signupLogoBase64 = ev.target.result; setHTML('signup-logo-preview', `<img src="${ev.target.result}" class="w-full h-full object-cover">`); }
+                if(type === 'signature') { window.AppState.signupSigBase64 = ev.target.result; setHTML('signup-sig-preview', `<img src="${ev.target.result}" class="w-full h-full object-cover">`); }
+            }; reader.readAsDataURL(file);
+        }
+
+        window.handleExpenseReceiptUpload = function(e) {
+            const file = e.target.files[0]; if(!file) return; const reader = new FileReader();
+            reader.onload = (ev) => { window.AppState.newExpenseReceiptBase64 = ev.target.result; setHTML('exp-receipt-preview', `<img src="${ev.target.result}" class="w-full h-full object-cover">`); }; reader.readAsDataURL(file);
+        }
+
+        window.handleSignup = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('signup-btn'); if(btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons();
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-password').value);
+                await setDoc(doc(db, 'artifacts', appId, 'users', cred.user.uid, 'config', 'settings'), {
+                    businessName: document.getElementById('signup-biz-name').value, owner: document.getElementById('signup-owner').value, phone: document.getElementById('signup-phone').value, gstin: document.getElementById('signup-gstin').value, address: document.getElementById('signup-address').value,
+                    logo: window.AppState.signupLogoBase64, signature: window.AppState.signupSigBase64, template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: '', features: defaultFeatures
+                });
+                window.showToast("Account Created Successfully!");
+            } catch (error) { window.showToast("Signup failed: " + error.message, "error"); }
+            finally { if(btn) btn.innerHTML = 'Create Account <i data-lucide="user-plus" class="w-4 h-4"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+        }
+
+        window.handleLogout = async function() {
+            try {
+                sessionStorage.removeItem('ayur_unlocked');
+                await signOut(auth);
+                window.showToast("Signed out successfully.");
+            } catch(e) { window.showToast("Error signing out", "error"); }
+        }
+
+        window.getNextInvoiceId = function() {
+            const monthStr = new Date().toLocaleString('default', { month: 'short' }).toUpperCase();
+            const prefix = `DEV${monthStr}`;
+            const existing = window.AppState.invoices.filter(i => i.id && i.id.startsWith(prefix));
+            let maxNum = 0;
+            existing.forEach(i => {
+                const num = parseInt(i.id.replace(prefix, ''), 10);
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+            });
+            return `${prefix}${(maxNum + 1).toString().padStart(3, '0')}`;
+        }
+
+        function setupFirestoreListeners() {
+            const uid = window.AppState.user.uid;
+            if(window.unsubProducts) window.unsubProducts(); if(window.unsubClients) window.unsubClients();
+            if(window.unsubInvoices) window.unsubInvoices(); if(window.unsubSettings) window.unsubSettings();
+            if(window.unsubExpenses) window.unsubExpenses();
+
+            window.unsubProducts = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'products'), (snap) => { 
+                window.AppState.products = snap.docs.map(d => ({id: d.id, ...d.data()})); 
+                if(window.AppState.activeTab === 'inventory' && window.renderInventory) window.renderInventory();
+                if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
+            });
+            window.unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'clients'), (snap) => { 
+                window.AppState.clients = snap.docs.map(d => ({id: d.id, ...d.data()})); 
+                if(window.AppState.activeTab === 'clients') window.renderClients();
+            });
+            window.unsubInvoices = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'invoices'), (snap) => { 
+                window.AppState.invoices = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt); 
+                if(!window.AppState.draft.id || window.AppState.draft.id.startsWith('INV-')) {
+                    window.AppState.draft.id = window.getNextInvoiceId();
+                    if(window.AppState.activeTab === 'invoice') window.updateInvoiceUI();
+                }
+                if(window.AppState.activeTab === 'records') window.renderRecords();
+                if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
+                if(window.AppState.activeTab === 'clients') window.renderClients();
+            });
+            window.unsubExpenses = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'expenses'), (snap) => {
+                window.AppState.expenses = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.date) - new Date(a.date));
+                if(window.AppState.activeTab === 'expenses') window.renderExpenses();
+                if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
+            });
+            window.unsubSettings = onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'config', 'settings'), (docSnap) => {
+                if (docSnap.exists()) { 
+                    window.AppState.settings = { ...window.AppState.settings, ...docSnap.data() }; 
+                    if(window.AppState.activeTab === 'settings') window.populateSettingsUI(); 
+                    
+                    const lockScreen = document.getElementById('pin-lock-screen');
+                    if(window.AppState.settings.pinEnabled && !sessionStorage.getItem('ayur_unlocked') && lockScreen) {
+                        lockScreen.classList.add('active'); lockScreen.classList.remove('hidden');
+                    }
+                    window.applyFeatureVisibility();
+                    renderNavigation();
+                }
+            });
+        }
+
+        window.verifyPin = function() {
+            const entered = document.getElementById('pin-input') ? document.getElementById('pin-input').value : '';
+            if (entered === window.AppState.settings.pin) {
+                sessionStorage.setItem('ayur_unlocked', 'true');
+                const lockScreen = document.getElementById('pin-lock-screen');
+                if(lockScreen) { lockScreen.classList.remove('active'); lockScreen.classList.add('hidden'); }
+                const errEl = document.getElementById('pin-error'); if(errEl) errEl.classList.add('hidden');
+            } else { 
+                const errEl = document.getElementById('pin-error'); if(errEl) errEl.classList.remove('hidden'); 
+                setVal('pin-input', ''); 
+            }
+        }
+        window.togglePinFields = function(checked) { const el = document.getElementById('pin-fields'); if(el) el.classList.toggle('hidden', !checked); }
+        
+        window.generateLocalQR = function(text) {
+            if(!text) return '';
+            try { const qr = new QRious({ value: text, size: 300, level: 'H' }); return qr.toDataURL('image/png'); } 
+            catch(e) { return ''; }
         }
 
         window.applyFeatureVisibility = function() {
@@ -746,7 +921,7 @@
                 mBtn.innerHTML = `<i data-lucide="${item.icon}" class="w-6 h-6 mb-1 ${isActive ? 'fill-emerald-100' : ''}"></i> <span class="truncate w-full text-center">${item.label}</span>`;
                 mBtn.onclick = () => switchTab(item.id); mobileNav.appendChild(mBtn);
             });
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         window.switchTab = function(tabId) {
@@ -763,12 +938,12 @@
             if(tabId === 'expenses' && window.renderExpenses) window.renderExpenses();
             if(tabId === 'records') { window.populateClientFilter(); window.renderRecords(); }
             if(tabId === 'clients') window.renderClients();
-            if(tabId === 'settings') populateSettingsUI();
+            if(tabId === 'settings') window.populateSettingsUI();
             
             window.scrollTo(0,0);
         }
 
-        function updateDashboard() {
+        window.updateDashboard = function() {
             const invoices = window.AppState.invoices || []; const finalized = invoices.filter(i => i.status === 'final' && i.docType !== 'Quotation' && i.docType !== 'Proforma Invoice');
             const products = window.AppState.products || []; const expenses = window.AppState.expenses || [];
             
@@ -777,10 +952,10 @@
             const netProfit = totalRev - totalExp;
             const grossMargin = totalRev > 0 ? ((netProfit / totalRev) * 100).toFixed(1) : 0;
 
-            const elProfit = document.getElementById('dash-profit'); if(elProfit) elProfit.textContent = formatINR(netProfit);
-            const elMargin = document.getElementById('dash-margin'); if(elMargin) elMargin.textContent = `${grossMargin}%`;
-            const elRev = document.getElementById('dash-revenue'); if(elRev) elRev.textContent = formatINR(totalRev);
-            const elExp = document.getElementById('dash-expenses'); if(elExp) elExp.textContent = formatINR(totalExp);
+            setText('dash-profit', formatINR(netProfit));
+            setText('dash-margin', `${grossMargin}%`);
+            setText('dash-revenue', formatINR(totalRev));
+            setText('dash-expenses', formatINR(totalExp));
             
             const outputTax = finalized.reduce((sum, i) => sum + (Number(i.totalTax) || 0), 0);
             const inputTax = expenses.reduce((sum, e) => sum + (Number(e.gstAmount) || 0), 0);
@@ -790,10 +965,10 @@
             let cashL = 0, bankL = 0;
             finalized.filter(i => i.paymentStatus === 'paid').forEach(i => { if(i.paymentMode === 'cash') cashL += Number(i.grandTotal); else bankL += Number(i.grandTotal); });
 
-            const elTax = document.getElementById('dash-tax'); if(elTax) elTax.textContent = formatINR(netTax);
-            const elUnpaid = document.getElementById('dash-unpaid'); if(elUnpaid) elUnpaid.textContent = formatINR(unpaidDues);
-            const elCash = document.getElementById('dash-cash'); if(elCash) elCash.textContent = formatINR(cashL);
-            const elBank = document.getElementById('dash-bank'); if(elBank) elBank.textContent = formatINR(bankL);
+            setText('dash-tax', formatINR(netTax));
+            setText('dash-unpaid', formatINR(unpaidDues));
+            setText('dash-cash', formatINR(cashL));
+            setText('dash-bank', formatINR(bankL));
 
             const ctxRevEl = document.getElementById('revenueChart');
             if (ctxRevEl) {
@@ -829,22 +1004,88 @@
                 const ageDays = (today - new Date(inv.date)) / (1000 * 60 * 60 * 24);
                 if(ageDays <= 30) d0_30 += Number(inv.grandTotal); else if(ageDays <= 60) d31_60 += Number(inv.grandTotal); else d60plus += Number(inv.grandTotal);
             });
-            const agingEl = document.getElementById('dash-aging');
-            if(agingEl) { agingEl.innerHTML = `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg"><span class="text-sm font-medium text-slate-600">0 - 30 Days</span><span class="font-bold text-slate-800">${formatINR(d0_30)}</span></div><div class="flex justify-between items-center bg-amber-50 p-3 rounded-lg"><span class="text-sm font-medium text-amber-700">31 - 60 Days</span><span class="font-bold text-amber-800">${formatINR(d31_60)}</span></div><div class="flex justify-between items-center bg-red-50 p-3 rounded-lg"><span class="text-sm font-medium text-red-700">60+ Days (Overdue)</span><span class="font-bold text-red-800">${formatINR(d60plus)}</span></div>`; }
+            setHTML('dash-aging', `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg"><span class="text-sm font-medium text-slate-600">0 - 30 Days</span><span class="font-bold text-slate-800">${formatINR(d0_30)}</span></div><div class="flex justify-between items-center bg-amber-50 p-3 rounded-lg"><span class="text-sm font-medium text-amber-700">31 - 60 Days</span><span class="font-bold text-amber-800">${formatINR(d31_60)}</span></div><div class="flex justify-between items-center bg-red-50 p-3 rounded-lg"><span class="text-sm font-medium text-red-700">60+ Days (Overdue)</span><span class="font-bold text-red-800">${formatINR(d60plus)}</span></div>`);
 
-            const elRecent = document.getElementById('dash-recent-activity');
-            if (elRecent) elRecent.innerHTML = invoices.slice(0, 8).map(inv => `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl mb-2"><div class="truncate pr-2"><div class="font-medium text-slate-800 text-sm truncate">${inv.client.name || 'Unknown'}</div><div class="text-xs text-slate-400">${inv.id}</div></div><div class="text-right shrink-0"><div class="font-bold text-emerald-700 text-sm">${window.formatCurrency(inv.grandTotal, inv.currency)}</div><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${inv.status === 'final' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${inv.status}</span></div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No recent activity.</div>';
+            setHTML('dash-recent-activity', invoices.slice(0, 8).map(inv => `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl mb-2"><div class="truncate pr-2"><div class="font-medium text-slate-800 text-sm truncate">${inv.client.name || 'Unknown'}</div><div class="text-xs text-slate-400">${inv.id}</div></div><div class="text-right shrink-0"><div class="font-bold text-emerald-700 text-sm">${window.formatCurrency(inv.grandTotal, inv.currency)}</div><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${inv.status === 'final' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${inv.status}</span></div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No recent activity.</div>');
 
             const lowStockItems = products.filter(p => p.stock !== undefined && p.stock <= 10 && !p.isHidden);
-            const elLowStock = document.getElementById('dash-low-stock');
-            if (elLowStock) elLowStock.innerHTML = lowStockItems.map(p => `<div class="flex justify-between items-center p-3 bg-red-50 rounded-xl mb-2"><div class="text-sm font-medium text-red-800">${p.name}</div><div class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">Stock: ${p.stock}</div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">Stock levels look good!</div>';
+            setHTML('dash-low-stock', lowStockItems.map(p => `<div class="flex justify-between items-center p-3 bg-red-50 rounded-xl mb-2"><div class="text-sm font-medium text-red-800">${p.name}</div><div class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">Stock: ${p.stock}</div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">Stock levels look good!</div>');
 
             const salesMap = {}; finalized.forEach(inv => inv.items.forEach(item => salesMap[item.name] = (salesMap[item.name] || 0) + Number(item.qty)));
             const topSellers = Object.entries(salesMap).sort((a,b) => b[1] - a[1]).slice(0, 10);
-            const elTopSellers = document.getElementById('dash-top-sellers');
-            if (elTopSellers) elTopSellers.innerHTML = topSellers.map(ts => `<div class="flex justify-between items-center p-3 bg-emerald-50 rounded-xl mb-2"><div class="text-sm font-medium text-emerald-800">${ts[0]}</div><div class="text-xs font-bold text-emerald-700">${ts[1]} sold</div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No sales data yet.</div>';
+            setHTML('dash-top-sellers', topSellers.map(ts => `<div class="flex justify-between items-center p-3 bg-emerald-50 rounded-xl mb-2"><div class="text-sm font-medium text-emerald-800">${ts[0]}</div><div class="text-xs font-bold text-emerald-700">${ts[1]} sold</div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No sales data yet.</div>');
         }
-        window.updateDashboard = updateDashboard;
+
+        // --- Expenses Module ---
+        window.toggleExpenseModal = function(show) {
+            const frm = document.getElementById('add-expense-form'); if(frm) frm.classList.toggle('hidden', !show);
+            if(!show) {
+                setVal('exp-date', new Date().toISOString().split('T')[0]); setVal('exp-amount', ''); setVal('exp-desc', ''); setVal('exp-gst', '');
+                window.AppState.newExpenseReceiptBase64 = '';
+                setHTML('exp-receipt-preview', `<i data-lucide="image" class="text-slate-400 w-5 h-5"></i>`);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+        window.saveExpense = async function() {
+            const date = document.getElementById('exp-date') ? document.getElementById('exp-date').value : '';
+            const category = document.getElementById('exp-category') ? document.getElementById('exp-category').value : '';
+            const amount = document.getElementById('exp-amount') ? document.getElementById('exp-amount').value : '';
+            const desc = document.getElementById('exp-desc') ? document.getElementById('exp-desc').value.trim() : '';
+            const gstAmount = document.getElementById('exp-gst') ? document.getElementById('exp-gst').value : 0;
+
+            if(!date || !amount) return window.showToast("Date and Amount required.", "error");
+
+            const lockDate = window.AppState.settings.lockDate;
+            if(lockDate && new Date(date) < new Date(lockDate)) return window.showToast(`Cannot modify data before FY Lock Date: ${lockDate}`, "error");
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'expenses'), { date, category, amount: Number(amount), gstAmount: Number(gstAmount), desc, receipt: window.AppState.newExpenseReceiptBase64, createdAt: serverTimestamp() });
+                window.toggleExpenseModal(false); window.showToast("Expense logged!");
+            } catch(e) { window.showToast("Failed to log expense", "error"); }
+        }
+        window.deleteExpense = async function(id) {
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'expenses', id)); window.showToast("Expense removed"); } 
+            catch(e) { window.showToast("Failed to remove expense", "error"); }
+        }
+        window.renderExpenses = function() {
+            setHTML('expenses-list', window.AppState.expenses.map(e => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white">
+                    <td class="p-4 text-slate-600 text-sm whitespace-nowrap">${e.date}</td>
+                    <td class="p-4 text-sm font-medium text-slate-800"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${e.category}</span></td>
+                    <td class="p-4 text-sm text-slate-600 truncate max-w-[200px]">${e.desc || '-'}</td>
+                    <td class="p-4 text-right font-bold text-red-600">${formatINR(e.amount)}</td>
+                    <td class="p-4 text-right font-medium text-emerald-600">${e.gstAmount ? formatINR(e.gstAmount) : '-'}</td>
+                    <td class="p-4 text-center">${e.receipt ? `<a href="${e.receipt}" target="_blank" class="text-blue-500 hover:underline text-xs">View</a>` : '-'}</td>
+                    <td class="p-4 text-center"><button onclick="window.deleteExpense('${e.id}')" class="text-slate-400 hover:text-red-600 transition-colors p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" class="p-8 text-center text-slate-400">No expenses logged yet.</td></tr>');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // --- Invoice Engine ---
+        window.handleClientSearch = function(val) {
+            const suggDiv = document.getElementById('client-suggestions'); if(!suggDiv) return;
+            if(!val) { suggDiv.classList.add('hidden'); return; }
+            const matches = window.AppState.clients.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
+            if(matches.length === 0) { suggDiv.classList.add('hidden'); return; }
+            suggDiv.innerHTML = matches.map(c => `<div class="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50" onclick='window.selectClient(${JSON.stringify(c).replace(/'/g, "&#39;")})'><div class="font-medium text-slate-800">${c.name}</div><div class="text-xs text-slate-500">Mob: ${c.mobile || 'N/A'}</div></div>`).join('');
+            suggDiv.classList.remove('hidden');
+        }
+        window.selectClient = function(c) { window.AppState.draft.client = c; window.restoreDraftToUI(); const sugg = document.getElementById('client-suggestions'); if(sugg) sugg.classList.add('hidden'); window.updateInvoiceUI(); }
+
+        window.handleProductSearch = function(val) {
+            const suggDiv = document.getElementById('product-suggestions'); if(!suggDiv) return;
+            if(!val) { suggDiv.classList.add('hidden'); return; }
+            const matches = window.AppState.products.filter(p => !p.isHidden && p.name.toLowerCase().includes(val.toLowerCase()));
+            if(matches.length === 0) { suggDiv.classList.add('hidden'); return; }
+            suggDiv.innerHTML = matches.map(p => `<div class="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 flex justify-between items-center" onclick='window.addDraftItem(${JSON.stringify(p).replace(/'/g, "&#39;")})'><div><div class="font-medium text-slate-800">${p.name}</div><div class="text-[10px] text-slate-400">Stock: ${p.stock || 0}</div></div><div class="text-right"><div class="font-bold text-emerald-700">₹${p.rate}</div></div></div>`).join('');
+            suggDiv.classList.remove('hidden');
+        }
+        window.addDraftItem = function(p) { window.AppState.draft.items.push({ id: Date.now().toString(), productId: p.id, name: p.name, rate: Number(p.rate), qty: 1, gst: Number(p.gst), hsn: p.hsn || '', batch: p.batch || '', expiry: p.expiry || '' }); setVal('inv-product-search', ''); const sugg = document.getElementById('product-suggestions'); if(sugg) sugg.classList.add('hidden'); window.updateInvoiceUI(); }
+        window.updateDraftField = function(field, val) { window.AppState.draft[field] = val; window.updateInvoiceUI(); }
+        window.updateDraftItem = function(id, field, val) { const item = window.AppState.draft.items.find(i => i.id === id); if(item) { item[field] = field === 'qty' || field === 'rate' ? Number(val) : val; window.updateInvoiceUI(); } }
+        window.removeDraftItem = function(id) { window.AppState.draft.items = window.AppState.draft.items.filter(i => i.id !== id); window.updateInvoiceUI(); }
+        window.setPaymentMode = function(mode) { window.AppState.draft.paymentMode = mode; window.updateInvoiceUI(); }
 
         window.calculateInvoiceTotals = function() {
             let subtotal = 0, totalTax = 0; window.AppState.draft.items.forEach(item => { const lineTotal = Number(item.qty) * Number(item.rate); totalTax += lineTotal * (Number(item.gst) / 100); subtotal += lineTotal; });
@@ -853,23 +1094,25 @@
             const grandTotal = Math.max(0, subtotal + totalTax - discountAmt - tdsAmt);
 
             const curr = window.AppState.draft.currency || 'INR';
-            document.getElementById('summary-subtotal').textContent = window.formatCurrency(subtotal, curr); 
-            document.getElementById('summary-tax').textContent = window.formatCurrency(totalTax, curr); 
-            document.getElementById('summary-grand').textContent = window.formatCurrency(grandTotal, curr);
-            document.getElementById('summary-cgst').textContent = window.formatCurrency(totalTax / 2, curr);
-            document.getElementById('summary-sgst').textContent = window.formatCurrency(totalTax / 2, curr);
+            setText('summary-subtotal', window.formatCurrency(subtotal, curr)); 
+            setText('summary-tax', window.formatCurrency(totalTax, curr)); 
+            setText('summary-grand', window.formatCurrency(grandTotal, curr));
+            
+            setText('summary-cgst', window.formatCurrency(totalTax / 2, curr));
+            setText('summary-sgst', window.formatCurrency(totalTax / 2, curr));
 
             const qrWrapper = document.getElementById('qr-image-wrapper');
-            if(grandTotal > 0 && window.AppState.draft.paymentMode === 'upi' && curr === 'INR') {
-                const upiStr = `upi://pay?pa=${window.AppState.settings.upi || 'business@upi'}&pn=${encodeURIComponent(window.AppState.settings.businessName)}&am=${grandTotal.toFixed(2)}&cu=INR`;
-                qrWrapper.innerHTML = `<img src="${window.generateLocalQR(upiStr)}" class="w-[140px] h-[140px] block mx-auto rounded">`;
-            } else { qrWrapper.innerHTML = `<div class="w-[140px] h-[140px] bg-slate-100 flex items-center justify-center text-slate-400 text-xs text-center">Add items<br>to generate QR</div>`; }
+            if(qrWrapper) {
+                if(grandTotal > 0 && window.AppState.draft.paymentMode === 'upi' && curr === 'INR') {
+                    const upiStr = `upi://pay?pa=${window.AppState.settings.upi || 'business@upi'}&pn=${encodeURIComponent(window.AppState.settings.businessName)}&am=${grandTotal.toFixed(2)}&cu=INR`;
+                    qrWrapper.innerHTML = `<img src="${window.generateLocalQR(upiStr)}" class="w-[140px] h-[140px] block mx-auto rounded">`;
+                } else { qrWrapper.innerHTML = `<div class="w-[140px] h-[140px] bg-slate-100 flex items-center justify-center text-slate-400 text-xs text-center">Add items<br>to generate QR</div>`; }
+            }
             return { subtotal, totalTax, grandTotal, discountAmountCalculated: discountAmt, tdsCalculated: tdsAmt };
         }
 
         window.restoreDraftToUI = function() {
             const d = window.AppState.draft;
-            const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
             setVal('inv-client-name', d.client.name || ''); setVal('inv-client-mobile', d.client.mobile || ''); setVal('inv-client-gstin', d.client.gstin || ''); setVal('inv-client-address', d.client.address || '');
             setVal('inv-due-date', d.dueDate || ''); setVal('inv-discount', d.discount || 0); setVal('inv-discount-type', d.discountType || 'fixed'); setVal('inv-notes', d.notes || '');
             setVal('inv-doc-type', d.docType || 'Tax Invoice'); setVal('inv-currency', d.currency || 'INR'); setVal('inv-tds', d.tds || 0);
@@ -879,23 +1122,16 @@
 
         window.updateInvoiceUI = function() {
             localStorage.setItem('ayur_draft_pro', JSON.stringify(window.AppState.draft));
-            const tbody = document.getElementById('invoice-items-body'); const items = window.AppState.draft.items;
-            const curr = window.AppState.draft.currency || 'INR';
+            const items = window.AppState.draft.items; const curr = window.AppState.draft.currency || 'INR';
             
-            if(items.length === 0) { 
-                if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr>`; 
-            } else {
-                if(tbody) {
-                    tbody.innerHTML = items.map(item => `<tr class="border-b border-slate-100 last:border-0 bg-white"><td class="p-3 font-medium text-slate-800 min-w-[120px]">${item.name} ${(window.isFeatureEnabled('batch') && (item.batch || item.expiry)) ? `<br><span class="text-[9px] text-slate-400">B:${item.batch||'-'} E:${item.expiry||'-'}</span>` : ''}</td>${window.isFeatureEnabled('hsn') ? `<td class="p-3"><input type="text" class="w-16 p-1 border border-slate-200 rounded outline-none text-xs" value="${item.hsn || ''}" onchange="window.updateDraftItem('${item.id}', 'hsn', this.value)" placeholder="HSN"></td>` : ''}<td class="p-3"><input type="number" min="1" class="w-16 p-1 border border-slate-200 rounded outline-none" value="${item.qty}" onchange="window.updateDraftItem('${item.id}', 'qty', this.value)"></td><td class="p-3"><input type="number" class="w-20 p-1 border border-slate-200 rounded outline-none" value="${item.rate}" onchange="window.updateDraftItem('${item.id}', 'rate', this.value)"></td><td class="p-3 text-slate-600">${item.gst}%</td><td class="p-3 text-right font-medium text-emerald-700">${window.formatCurrency(Number(item.qty) * Number(item.rate), curr)}</td><td class="p-3 text-center"><button onclick="window.removeDraftItem('${item.id}')" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`).join('');
-                    lucide.createIcons();
-                }
+            let tbodyHtml = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr>`;
+            if(items.length > 0) {
+                tbodyHtml = items.map(item => `<tr class="border-b border-slate-100 last:border-0 bg-white"><td class="p-3 font-medium text-slate-800 min-w-[120px]">${item.name} ${(window.isFeatureEnabled('batch') && (item.batch || item.expiry)) ? `<br><span class="text-[9px] text-slate-400">B:${item.batch||'-'} E:${item.expiry||'-'}</span>` : ''}</td>${window.isFeatureEnabled('hsn') ? `<td class="p-3"><input type="text" class="w-16 p-1 border border-slate-200 rounded outline-none text-xs" value="${item.hsn || ''}" onchange="window.updateDraftItem('${item.id}', 'hsn', this.value)" placeholder="HSN"></td>` : ''}<td class="p-3"><input type="number" min="1" class="w-16 p-1 border border-slate-200 rounded outline-none" value="${item.qty}" onchange="window.updateDraftItem('${item.id}', 'qty', this.value)"></td><td class="p-3"><input type="number" class="w-20 p-1 border border-slate-200 rounded outline-none" value="${item.rate}" onchange="window.updateDraftItem('${item.id}', 'rate', this.value)"></td><td class="p-3 text-slate-600">${item.gst}%</td><td class="p-3 text-right font-medium text-emerald-700">${window.formatCurrency(Number(item.qty) * Number(item.rate), curr)}</td><td class="p-3 text-center"><button onclick="window.removeDraftItem('${item.id}')" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`).join('');
             }
             
-            const wrapper = document.getElementById('invoice-items-wrapper');
-            if(wrapper && tbody) {
-                const theadHtml = `<tr><th class="p-3">Item Name</th>${window.isFeatureEnabled('hsn') ? '<th class="p-3 w-16">HSN</th>' : ''}<th class="p-3 w-16">Qty</th><th class="p-3 w-24">Rate</th><th class="p-3 w-16">GST</th><th class="p-3 w-24 text-right">Total</th><th class="p-3 w-10"></th></tr>`;
-                wrapper.innerHTML = `<table class="w-full text-left text-sm min-w-[650px]"><thead class="bg-slate-100 text-slate-600 font-medium">${theadHtml}</thead><tbody id="invoice-items-body">${tbody.innerHTML}</tbody></table>`;
-            }
+            const theadHtml = `<tr><th class="p-3">Item Name</th>${window.isFeatureEnabled('hsn') ? '<th class="p-3 w-16">HSN</th>' : ''}<th class="p-3 w-16">Qty</th><th class="p-3 w-24">Rate</th><th class="p-3 w-16">GST</th><th class="p-3 w-24 text-right">Total</th><th class="p-3 w-10"></th></tr>`;
+            setHTML('invoice-items-wrapper', `<table class="w-full text-left text-sm min-w-[650px]"><thead class="bg-slate-100 text-slate-600 font-medium">${theadHtml}</thead><tbody id="invoice-items-body">${tbodyHtml}</tbody></table>`);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
 
             const m = window.AppState.draft.paymentMode;
             const btnUpi = document.getElementById('btn-mode-upi'); if(btnUpi) btnUpi.className = `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${m === 'upi' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`;
@@ -903,12 +1139,24 @@
             const qrC = document.getElementById('qr-container'); const cashC = document.getElementById('cash-container');
             if(qrC && cashC) { if(m==='upi') { qrC.classList.remove('hidden'); cashC.classList.add('hidden'); } else { qrC.classList.add('hidden'); cashC.classList.remove('hidden'); } }
             
-            const idDisp = document.getElementById('inv-id-display'); if(idDisp) idDisp.textContent = window.AppState.draft.id;
+            setText('inv-id-display', window.AppState.draft.id);
             window.calculateInvoiceTotals();
         }
 
+        window.resumeDraft = function(id) { const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; window.AppState.draft = JSON.parse(JSON.stringify(inv)); window.switchTab('invoice'); }
+        window.issueCreditNote = function(id) { 
+            if(!window.isFeatureEnabled('creditNote')) return;
+            const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; 
+            const cnDraft = JSON.parse(JSON.stringify(inv));
+            cnDraft.id = window.getNextInvoiceId(); cnDraft.docType = 'Credit Note'; cnDraft.status = 'draft';
+            cnDraft.items = cnDraft.items.map(item => ({...item, qty: -Math.abs(item.qty)}));
+            window.AppState.draft = cnDraft; window.switchTab('invoice'); window.showToast("Credit Note Generated as Draft");
+        }
+
         window.saveInvoice = async function(status) {
-            const name = document.getElementById('inv-client-name').value.trim(); if(!name) return window.showToast("Please specify a client name.", "error");
+            const nameEl = document.getElementById('inv-client-name');
+            const name = nameEl ? nameEl.value.trim() : ''; 
+            if(!name) return window.showToast("Please specify a client name.", "error");
             if(window.AppState.draft.items.length === 0) return window.showToast("Add at least one product.", "error");
             
             const lockDate = window.AppState.settings.lockDate;
@@ -916,7 +1164,12 @@
             if(lockDate && new Date(invDate) < new Date(lockDate)) return window.showToast(`Cannot generate before FY Lock Date: ${lockDate}`, "error");
 
             const totals = window.calculateInvoiceTotals();
-            const clientData = { name: name, mobile: document.getElementById('inv-client-mobile').value, gstin: document.getElementById('inv-client-gstin').value, address: document.getElementById('inv-client-address').value };
+            const clientData = { 
+                name: name, 
+                mobile: document.getElementById('inv-client-mobile') ? document.getElementById('inv-client-mobile').value : '', 
+                gstin: document.getElementById('inv-client-gstin') ? document.getElementById('inv-client-gstin').value : '', 
+                address: document.getElementById('inv-client-address') ? document.getElementById('inv-client-address').value : '' 
+            };
             const invoiceDoc = { ...window.AppState.draft, client: clientData, status: status, subtotal: totals.subtotal, totalTax: totals.totalTax, grandTotal: totals.grandTotal, tdsAmount: totals.tdsCalculated, date: invDate, createdAt: Date.now() };
 
             try {
@@ -939,29 +1192,96 @@
             } catch (err) { window.showToast("Error saving document.", "error"); }
         }
 
-        // --- PDF Rendering & Engine ---
-        window.viewInvoice = function(id) { 
-            const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; 
-            const area = document.getElementById('invoice-render-area'); if(area) area.innerHTML = window.generateInvoiceHTML(inv); 
-            const mod = document.getElementById('invoice-modal'); if(mod) mod.style.display = 'flex'; 
+        // --- Inventory ---
+        window.toggleProductModal = function(show) { 
+            const frm = document.getElementById('add-product-form'); if(frm) frm.classList.toggle('hidden', !show); 
+            if(!show) { 
+                window.AppState.editingProductId = null; setText('add-product-form-title', "Add New Item"); 
+                ['name','hsn','cost','rate','stock','batch','expiry'].forEach(id => { setVal(`new-prod-${id}`, (id==='stock'?'0':'')); }); 
+            } 
         }
-        window.closeInvoiceModal = function() { const mod = document.getElementById('invoice-modal'); if(mod) mod.style.display = 'none'; }
-        
-        window.downloadPDF = function() { 
-            window.showToast("Downloading PDF..."); 
-            const element = document.getElementById('invoice-render-area'); 
-            const invId = element.querySelector('.inv-id-tracker').dataset.id; 
-            html2pdf().set({ 
-                margin: 0, filename: `${invId}.pdf`, image: { type: 'jpeg', quality: 1 }, 
-                html2canvas: { scale: 3, useCORS: true, scrollY: 0 }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-            }).from(element).save(); 
+        window.editProduct = function(id) { 
+            const p = window.AppState.products.find(x => x.id === id); if(!p) return; 
+            window.AppState.editingProductId = id; 
+            setVal('new-prod-name', p.name); setVal('new-prod-category', p.category || 'Medicine'); setVal('new-prod-hsn', p.hsn || ''); 
+            setVal('new-prod-cost', p.cost || ''); setVal('new-prod-rate', p.rate); setVal('new-prod-gst', p.gst); 
+            setVal('new-prod-stock', p.stock || 0); setVal('new-prod-batch', p.batch || ''); setVal('new-prod-expiry', p.expiry || ''); 
+            setText('add-product-form-title', "Edit Item"); window.toggleProductModal(true); window.scrollTo(0,0); 
+        }
+        window.saveProduct = async function() {
+            const nameEl = document.getElementById('new-prod-name'); const rateEl = document.getElementById('new-prod-rate');
+            if(!nameEl || !rateEl) return;
+            const name = nameEl.value.trim(); const rate = rateEl.value;
+            if(!name || !rate) return window.showToast("Name and Rate required.", "error");
+            
+            const payload = { 
+                name, 
+                category: document.getElementById('new-prod-category') ? document.getElementById('new-prod-category').value : 'Medicine', 
+                hsn: document.getElementById('new-prod-hsn') ? document.getElementById('new-prod-hsn').value : '', 
+                cost: document.getElementById('new-prod-cost') ? Number(document.getElementById('new-prod-cost').value) : 0, 
+                rate: Number(rate), 
+                gst: document.getElementById('new-prod-gst') ? Number(document.getElementById('new-prod-gst').value) : 0, 
+                stock: document.getElementById('new-prod-stock') ? Number(document.getElementById('new-prod-stock').value) : 0, 
+                batch: document.getElementById('new-prod-batch') ? document.getElementById('new-prod-batch').value : '', 
+                expiry: document.getElementById('new-prod-expiry') ? document.getElementById('new-prod-expiry').value : '' 
+            };
+            try {
+                if (window.AppState.editingProductId) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', window.AppState.editingProductId), payload); } 
+                else { await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products'), { ...payload, isHidden: false, createdAt: serverTimestamp() }); }
+                window.toggleProductModal(false); window.showToast("Product saved!");
+            } catch(e) { window.showToast("Failed to save product", "error"); }
+        }
+        window.toggleHideProduct = async function(id, current) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', id), { isHidden: !current }); }
+        window.renderInventory = function() {
+            const searchEl = document.getElementById('inventory-search');
+            const query = (searchEl ? searchEl.value : '').toLowerCase(); 
+            const filtered = window.AppState.products.filter(p => p.name.toLowerCase().includes(query));
+            setHTML('inventory-list', filtered.map(p => {
+                const margin = (p.cost && p.rate && window.isFeatureEnabled('margin')) ? (((p.rate - p.cost) / p.cost) * 100).toFixed(0) : null;
+                const batchExpStr = window.isFeatureEnabled('batch') && (p.batch || p.expiry) ? `Batch: ${p.batch||'N/A'} • Exp: ${p.expiry||'N/A'}` : '';
+                const hsnStr = window.isFeatureEnabled('hsn') && p.hsn ? `HSN: ${p.hsn} ` : '';
+                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between ${p.isHidden ? 'opacity-60 bg-slate-50' : ''}"><div><div class="flex justify-between items-start mb-2"><h4 class="font-bold text-slate-800 truncate pr-2">${p.name}</h4><span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">GST ${p.gst}%</span></div><div class="text-2xl font-bold text-slate-700 mb-2">₹${p.rate} <span class="text-xs font-normal text-slate-400">/ ${p.category||'Medicine'}</span></div>${margin ? `<div class="text-xs font-bold text-emerald-600 mb-1">Margin: ${margin}%</div>` : ''}${(batchExpStr || hsnStr) ? `<div class="text-[10px] text-slate-500 mt-1 border-t border-slate-100 pt-2">${hsnStr ? hsnStr + '• ' : ''}${batchExpStr}</div>` : ''}</div><div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs ${p.stock <= 10 ? 'text-red-600 font-bold' : 'text-slate-500'}">Stock: ${p.stock || 0}</span><div><button onclick="window.editProduct('${p.id}')" class="text-xs text-blue-500 hover:text-blue-700 border border-slate-200 px-3 py-1 rounded hover:bg-blue-50 transition-colors mr-1">Edit</button><button onclick="window.toggleHideProduct('${p.id}', ${p.isHidden})" class="text-xs text-slate-500 hover:text-emerald-600 border border-slate-200 px-3 py-1 rounded hover:bg-emerald-50 transition-colors">${p.isHidden ? 'Unhide' : 'Archive'}</button></div></div></div>`;
+            }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No products found.</div>');
         }
 
-        window.bulkExportPDF = async function() {
-            const query = document.getElementById('filter-search').value.toLowerCase(); const start = document.getElementById('filter-start').value; const end = document.getElementById('filter-end').value; const payStatus = document.getElementById('filter-payment').value;
-            const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus) && i.status === 'final'; });
+        // --- Records, FY Filter & Payment ---
+        window.populateClientFilter = function() { 
+            const select = document.getElementById('filter-client'); if(!select) return; const currentVal = select.value; 
+            select.innerHTML = '<option value="">All Clients</option>' + window.AppState.clients.map(c => `<option value="${c.name}">${c.name}</option>`).join(''); select.value = currentVal; 
+        }
+        
+        window.setFinancialYear = function() {
+            const today = new Date(); const m = today.getMonth(); const y = today.getFullYear();
+            const startYear = m >= 3 ? y : y - 1; const endYear = startYear + 1;
+            setVal('filter-start', `${startYear}-04-01`); setVal('filter-end', `${endYear}-03-31`);
+            window.renderRecords(); window.showToast(`Showing FY ${startYear}-${endYear}`);
+        }
+
+        window.togglePaymentStatus = async function(id, current) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', id), { paymentStatus: current === 'paid' ? 'unpaid' : 'paid' }); }
+        
+        window.renderRecords = function() {
+            const searchEl = document.getElementById('filter-search'); const query = searchEl ? searchEl.value.toLowerCase() : ''; 
+            const startEl = document.getElementById('filter-start'); const start = startEl ? startEl.value : ''; 
+            const endEl = document.getElementById('filter-end'); const end = endEl ? endEl.value : ''; 
+            const payEl = document.getElementById('filter-payment'); const payStatus = payEl ? payEl.value : '';
             
+            const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus); });
+            
+            const collectedTax = filtered.filter(i => i.status === 'final' && i.docType === 'Tax Invoice').reduce((sum, i) => sum + (Number(i.totalTax) || 0), 0);
+            setText('records-tax-summary', formatINR(collectedTax));
+
+            setHTML('records-list', filtered.map(inv => `<tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white"><td class="p-4 font-mono text-emerald-700 text-sm">${inv.id}</td><td class="p-4 text-xs font-bold text-slate-500 uppercase">${inv.docType || 'Tax Invoice'}</td><td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td><td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td><td class="p-4 text-right font-bold ${inv.docType === 'Credit Note' ? 'text-red-600' : 'text-slate-800'}">${window.formatCurrency(inv.grandTotal, inv.currency)}</td><td class="p-4 text-center">${inv.status === 'draft' || inv.docType === 'Credit Note' ? `<span class="text-[10px] text-slate-400 font-bold uppercase">N/A</span>` : `<button onclick="window.togglePaymentStatus('${inv.id}', '${inv.paymentStatus || 'unpaid'}')" class="text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-colors ${inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-sm' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'}">${inv.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</button>`}</td><td class="p-4 text-center">${inv.status === 'draft' ? `<button onclick="window.resumeDraft('${inv.id}')" class="px-2 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>` : `<div class="flex items-center gap-1 justify-center"><button onclick="window.viewInvoice('${inv.id}')" class="px-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View PDF</button>${window.isFeatureEnabled('creditNote') ? `<button onclick="window.issueCreditNote('${inv.id}')" title="Issue Credit Note" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"></path></svg></button>`:''}</div>`}</td></tr>`).join('') || '<tr><td colspan="7" class="p-8 text-center text-slate-400">No records found matching filters.</td></tr>');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // 100% Reliable Bulk PDF Fix
+        window.bulkExportPDF = async function() {
+            const searchEl = document.getElementById('filter-search'); const query = searchEl ? searchEl.value.toLowerCase() : ''; 
+            const startEl = document.getElementById('filter-start'); const start = startEl ? startEl.value : ''; 
+            const endEl = document.getElementById('filter-end'); const end = endEl ? endEl.value : ''; 
+            const payEl = document.getElementById('filter-payment'); const payStatus = payEl ? payEl.value : '';
+
+            const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus) && i.status === 'final'; });
             if(filtered.length === 0) return window.showToast("No finalized invoices found in current filter.", "warning"); 
             
             const overlay = document.getElementById('pdf-loading-overlay');
@@ -971,27 +1291,143 @@
             const bulkArea = document.getElementById('bulk-render-area'); 
             
             if(renderContainer && bulkArea) {
-                renderContainer.style.zIndex = '9998'; renderContainer.style.opacity = '1'; bulkArea.innerHTML = '';
+                // Critical Fix for Bulk Blank Pages: Must be visible but positioned completely off-screen
+                renderContainer.style.visibility = 'visible'; bulkArea.innerHTML = '';
+                
                 filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = window.generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; wrapper.className = 'px-10 py-12'; bulkArea.appendChild(wrapper); });
                 
+                // Delay to allow DOM & QR codes to paint fully in the background
                 setTimeout(async () => {
                     try {
                         const originalScroll = window.scrollY; window.scrollTo(0,0);
-                        await html2pdf().set({ 
-                            margin: 0, filename: `Bulk_Invoices_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 1 }, 
-                            html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, 
-                            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-                        }).from(bulkArea).save();
+                        await html2pdf().set({ margin: 0, filename: `Bulk_Invoices_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(bulkArea).save();
                         window.scrollTo(0, originalScroll);
                         window.showToast("Bulk PDF Downloaded Successfully!");
                     } catch(e) { window.showToast("Error generating PDF", "error"); } 
                     finally {
-                        bulkArea.innerHTML = ''; renderContainer.style.zIndex = '-1'; renderContainer.style.opacity = '0';
+                        bulkArea.innerHTML = ''; renderContainer.style.visibility = 'hidden'; 
                         if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
                     }
-                }, 1000); 
+                }, 1500); 
             }
         }
+
+        window.exportCSV = function() {
+            const invoices = window.AppState.invoices; if(invoices.length === 0) return window.showToast("No data to export", "error");
+            const headers = "Invoice ID,Doc Type,Date,Client Name,Phone,Subtotal,Tax,Discount,TDS,Grand Total,Status,Payment Status\n";
+            const rows = invoices.map(i => `${i.id},${i.docType||'Tax Invoice'},${i.date},"${i.client.name || ''}",${i.client.mobile || ''},${i.subtotal},${i.totalTax},${i.discount},${i.tdsAmount||0},${i.grandTotal},${i.status},${i.paymentStatus||'unpaid'}`).join("\n");
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `DevAyurveda_Sales.csv`; link.click();
+        }
+
+        window.toggleClientModal = function(show) { const frm = document.getElementById('edit-client-form'); if(frm) frm.classList.toggle('hidden', !show); if(!show) window.AppState.editingClientId = null; }
+        window.editClient = function(id) { 
+            const c = window.AppState.clients.find(x => x.id === id); if(!c) return; window.AppState.editingClientId = id; 
+            setVal('edit-client-name', c.name || ''); setVal('edit-client-mobile', c.mobile || ''); setVal('edit-client-gstin', c.gstin || ''); setVal('edit-client-address', c.address || ''); setVal('edit-client-notes', c.notes || ''); 
+            window.toggleClientModal(true); window.scrollTo(0,0); 
+        }
+        window.saveClientEdit = async function() {
+            if(!window.AppState.editingClientId) return; 
+            const nameEl = document.getElementById('edit-client-name'); const name = nameEl ? nameEl.value.trim() : ''; 
+            if(!name) return window.showToast("Name is required", "error");
+            const clientData = { name, mobile: document.getElementById('edit-client-mobile') ? document.getElementById('edit-client-mobile').value : '', gstin: document.getElementById('edit-client-gstin') ? document.getElementById('edit-client-gstin').value : '', address: document.getElementById('edit-client-address') ? document.getElementById('edit-client-address').value : '', notes: document.getElementById('edit-client-notes') ? document.getElementById('edit-client-notes').value : '' };
+            try { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', window.AppState.editingClientId), clientData); window.toggleClientModal(false); window.showToast("Profile Updated"); } catch(e) { window.showToast("Failed to update client.", "error"); }
+        }
+        window.renderClients = function() {
+            const searchEl = document.getElementById('clients-search'); const query = (searchEl ? searchEl.value : '').toLowerCase(); const invoices = window.AppState.invoices || [];
+            const filteredClients = window.AppState.clients.filter(c => c.name.toLowerCase().includes(query) || (c.mobile && c.mobile.includes(query)));
+            setHTML('clients-list', filteredClients.map(c => {
+                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final'); const clv = cInvoices.reduce((sum, i) => sum + Number(i.grandTotal), 0);
+                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between"><div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">${c.name.charAt(0)}</div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 truncate">${c.name}</h4><div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div></div><div class="text-right shrink-0"><div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div><div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div><div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div></div></div>${c.notes ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-3 border border-slate-100 line-clamp-2 italic"><strong>Notes:</strong> ${c.notes}</div>` : ''}<div class="flex gap-2"><button onclick="window.editClient('${c.id}')" class="flex-1 text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider">Edit</button>${window.isFeatureEnabled('ledger') ? `<button onclick="window.generateClientLedger('${c.name}')" class="flex-1 text-[10px] px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 font-bold uppercase tracking-wider">Ledger PDF</button>`:''}</div></div>`
+            }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No clients found.</div>');
+        }
+
+        // Feature 17: Client Ledger PDF Generation
+        window.generateClientLedger = function(clientName) {
+            const clientInvs = window.AppState.invoices.filter(i => i.client.name === clientName && i.status === 'final').sort((a,b) => new Date(a.date) - new Date(b.date));
+            if(clientInvs.length === 0) return window.showToast("No finalized invoices for this client.", "warning");
+            
+            let runningBal = 0;
+            const rows = clientInvs.map(inv => {
+                const amount = Number(inv.grandTotal); const isPaid = inv.paymentStatus === 'paid';
+                if(!isPaid) runningBal += amount;
+                return `<tr class="border-b border-slate-200"><td class="py-2">${inv.date}</td><td class="py-2">${inv.id}</td><td class="py-2 text-right">₹${amount.toFixed(2)}</td><td class="py-2 text-center text-xs ${isPaid ? 'text-green-600 font-bold' : 'text-red-500'}">${isPaid ? 'Paid' : 'Unpaid'}</td><td class="py-2 text-right font-bold">₹${runningBal.toFixed(2)}</td></tr>`;
+            }).join('');
+
+            const html = `
+            <div class="font-sans bg-white relative p-8">
+                <h1 class="text-3xl font-bold text-slate-800 mb-2">${window.AppState.settings.businessName || 'Dev Ayurveda'}</h1>
+                <h2 class="text-xl text-slate-500 mb-8 border-b pb-4">Statement of Accounts: ${clientName}</h2>
+                <table class="w-full text-left text-sm mb-8"><thead class="bg-slate-100"><tr><th class="py-2 px-2">Date</th><th class="py-2 px-2">Invoice No.</th><th class="py-2 px-2 text-right">Invoice Amount</th><th class="py-2 px-2 text-center">Status</th><th class="py-2 px-2 text-right">Running Due Balance</th></tr></thead><tbody>${rows}</tbody></table>
+                <div class="text-right text-lg font-bold text-slate-800">Total Outstanding Balance: <span class="text-red-600">₹${runningBal.toFixed(2)}</span></div>
+            </div>`;
+            setHTML('ledger-render-area', html); const lMod = document.getElementById('ledger-modal'); if(lMod) lMod.style.display = 'flex';
+        }
+        window.closeLedgerModal = function() { const lMod = document.getElementById('ledger-modal'); if(lMod) lMod.style.display = 'none'; }
+        window.downloadLedgerPDF = function() { window.showToast("Downloading Ledger..."); html2pdf().set({ margin: 10, filename: `Ledger_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('ledger-render-area')).save(); }
+
+        window.populateSettingsUI = function() {
+            const s = window.AppState.settings;
+            setVal('set-biz-name', s.businessName || ''); setVal('set-biz-gstin', s.gstin || ''); setVal('set-biz-address', s.address || ''); 
+            setVal('set-biz-phone', s.phone || ''); setVal('set-biz-upi', s.upi || ''); setVal('set-biz-terms', s.customTerms || ''); 
+            setVal('set-biz-logo-display', s.logoDisplay || 'both'); setVal('set-lock-date', s.lockDate || ''); 
+            setVal('set-bank-name', s.bankName || ''); setVal('set-bank-acc', s.bankAcc || ''); setVal('set-bank-ifsc', s.bankIfsc || '');
+            
+            const pinEl = document.getElementById('set-pin-enable'); if(pinEl) { pinEl.checked = s.pinEnabled || false; window.togglePinFields(s.pinEnabled || false); }
+            
+            if(s.logo) setHTML('logo-preview', `<img src="${s.logo}" class="w-full h-full object-contain">`);
+            if(s.signature) setHTML('sig-preview', `<img src="${s.signature}" class="w-full h-full object-contain">`);
+            if(s.seal) setHTML('seal-preview', `<img src="${s.seal}" class="w-full h-full object-contain">`);
+            window.setTemplate(s.template || 'modern');
+
+            const f = s.features || defaultFeatures;
+            const toggles = ['expenses', 'multiDoc', 'currency', 'shipping', 'tds', 'rcm', 'hsn', 'dueDate', 'ledger', 'creditNote', 'margin', 'batch'];
+            toggles.forEach(t => { const el = document.getElementById(`feat-${t}`); if(el) el.checked = f[t] !== false; });
+        }
+
+        window.setTemplate = function(tpl) { 
+            window.AppState.settings.template = tpl; 
+            ['modern', 'classic', 'minimal', 'compact', 'elegant', 'bold', 'nature', 'corporate'].forEach(t => { 
+                const btn = document.getElementById(`tpl-${t}`);
+                if(btn) btn.className = t === tpl ? `p-2 border rounded-xl text-center border-emerald-500 bg-emerald-50 shadow-sm` : `p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white opacity-60`; 
+            }); 
+        }
+        
+        window.saveSettings = async function() {
+            try {
+                const s = window.AppState.settings; 
+                s.businessName = document.getElementById('set-biz-name') ? document.getElementById('set-biz-name').value : ''; 
+                s.gstin = document.getElementById('set-biz-gstin') ? document.getElementById('set-biz-gstin').value : ''; 
+                s.address = document.getElementById('set-biz-address') ? document.getElementById('set-biz-address').value : ''; 
+                s.phone = document.getElementById('set-biz-phone') ? document.getElementById('set-biz-phone').value : ''; 
+                s.upi = document.getElementById('set-biz-upi') ? document.getElementById('set-biz-upi').value : ''; 
+                s.customTerms = document.getElementById('set-biz-terms') ? document.getElementById('set-biz-terms').value : ''; 
+                s.logoDisplay = document.getElementById('set-biz-logo-display') ? document.getElementById('set-biz-logo-display').value : 'both';
+                s.lockDate = document.getElementById('set-lock-date') ? document.getElementById('set-lock-date').value : ''; 
+                s.bankName = document.getElementById('set-bank-name') ? document.getElementById('set-bank-name').value : ''; 
+                s.bankAcc = document.getElementById('set-bank-acc') ? document.getElementById('set-bank-acc').value : ''; 
+                s.bankIfsc = document.getElementById('set-bank-ifsc') ? document.getElementById('set-bank-ifsc').value : '';
+                
+                s.features = {}; const toggles = ['expenses', 'multiDoc', 'currency', 'shipping', 'tds', 'rcm', 'hsn', 'dueDate', 'ledger', 'creditNote', 'margin', 'batch'];
+                toggles.forEach(t => { const el = document.getElementById(`feat-${t}`); if(el) s.features[t] = el.checked; });
+
+                const wantPinEl = document.getElementById('set-pin-enable'); const wantPin = wantPinEl ? wantPinEl.checked : false; 
+                const curPinInp = document.getElementById('set-pin-current') ? document.getElementById('set-pin-current').value : ''; 
+                const newPinInp = document.getElementById('set-pin-new') ? document.getElementById('set-pin-new').value : '';
+                
+                if (wantPin && !s.pinEnabled) { if(newPinInp.length !== 4) return window.showToast("New PIN must be exactly 4 digits.", "error"); s.pinEnabled = true; s.pin = newPinInp; } 
+                else if (wantPin && s.pinEnabled && newPinInp.length === 4) { if(curPinInp !== s.pin) return window.showToast("Current PIN is incorrect.", "error"); s.pin = newPinInp; } 
+                else if (!wantPin) { s.pinEnabled = false; s.pin = ''; }
+                await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'config', 'settings'), s); 
+                window.showToast("Settings saved securely!");
+                setVal('set-pin-current', ''); setVal('set-pin-new', '');
+                
+                window.applyFeatureVisibility(); window.renderNavigation();
+            } catch(e) { window.showToast("Failed to save settings.", "error"); }
+        }
+
+        window.viewInvoice = function(id) { const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; setHTML('invoice-render-area', window.generateInvoiceHTML(inv)); const mod = document.getElementById('invoice-modal'); if(mod) mod.style.display = 'flex'; }
+        window.closeInvoiceModal = function() { const mod = document.getElementById('invoice-modal'); if(mod) mod.style.display = 'none'; }
+        window.downloadPDF = function() { window.showToast("Downloading PDF..."); const element = document.getElementById('invoice-render-area'); const invId = element.querySelector('.inv-id-tracker').dataset.id; html2pdf().set({ margin: 0, filename: `${invId}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 3, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save(); }
 
         window.generateInvoiceHTML = function(inv) {
             const s = window.AppState.settings; const tpl = s.template || 'modern'; const curr = inv.currency || 'INR';
@@ -1074,9 +1510,6 @@
                 </div>
             </div>`;
         }
-        
-        // Ensure initial load sets dashboard
-        window.onload = () => { if(!window.AppState.user) { document.getElementById('auth-container').style.display = 'block'; } };
     </script>
 </body>
 </html>
