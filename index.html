@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dev Ayurveda ERP - Pro Edition</title>
+    <title>Dev Ayurveda ERP - Modular Pro Edition</title>
     
     <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -129,7 +129,7 @@
             <div class="p-6">
                 <div class="flex items-center gap-3 mb-10 text-emerald-800">
                     <div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><i data-lucide="box" class="w-7 h-7"></i></div>
-                    <div><h1 class="text-xl font-bold leading-tight">Dev Ayurveda</h1><p class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Pro ERP Edition</p></div>
+                    <div><h1 class="text-xl font-bold leading-tight">Dev Ayurveda</h1><p class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Modular Pro ERP</p></div>
                 </div>
                 <nav class="flex flex-col gap-2" id="desktop-nav"></nav>
             </div>
@@ -169,7 +169,7 @@
                             <div class="text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">Total Revenue</div>
                             <div class="text-2xl font-bold text-slate-800" id="dash-revenue">₹0</div>
                         </div>
-                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center text-center relative overflow-hidden">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center text-center relative overflow-hidden wrap-expenses-stat">
                             <div class="absolute -right-4 -bottom-4 opacity-5"><i data-lucide="trending-down" class="w-24 h-24 text-red-500"></i></div>
                             <div class="text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">Total Expenses</div>
                             <div class="text-2xl font-bold text-red-600" id="dash-expenses">₹0</div>
@@ -240,9 +240,9 @@
                     </div>
 
                     <!-- Engine Top Controls -->
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-wrap gap-4 items-center justify-between">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-wrap gap-4 items-center justify-between" id="wrap-multidoc">
                         <div class="flex gap-4 items-center">
-                            <div>
+                            <div class="wrap-multidoc-inner">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Document Type</label>
                                 <select id="inv-doc-type" onchange="window.updateDraftField('docType', this.value)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-sm font-medium outline-none focus:border-emerald-500">
                                     <option value="Tax Invoice">Tax Invoice</option>
@@ -250,14 +250,14 @@
                                     <option value="Quotation">Quotation / Estimate</option>
                                 </select>
                             </div>
-                            <div>
+                            <div id="wrap-currency">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Currency</label>
                                 <select id="inv-currency" onchange="window.updateDraftField('currency', this.value)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-sm font-medium outline-none focus:border-emerald-500">
                                     <option value="INR">INR (₹)</option><option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option>
                                 </select>
                             </div>
                         </div>
-                        <div>
+                        <div id="wrap-shipping-toggle">
                             <button onclick="document.getElementById('adv-billing-fields').classList.toggle('hidden')" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"><i data-lucide="settings-2" class="w-4 h-4"></i> Toggle Advanced Fields (Shipping, PO, RCM)</button>
                         </div>
                     </div>
@@ -267,7 +267,7 @@
                         <div><label class="text-xs font-medium text-slate-700 block mb-1">PO Reference No.</label><input type="text" id="inv-po-no" class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none text-sm" oninput="window.updateDraftField('poNo', this.value)"></div>
                         <div><label class="text-xs font-medium text-slate-700 block mb-1">Vehicle / Transport No.</label><input type="text" id="inv-vehicle" class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none text-sm" oninput="window.updateDraftField('vehicleNo', this.value)"></div>
                         <div><label class="text-xs font-medium text-slate-700 block mb-1">E-Way Bill / LR No.</label><input type="text" id="inv-eway" class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none text-sm" oninput="window.updateDraftField('ewayBill', this.value)"></div>
-                        <div class="flex items-center gap-2 pt-5">
+                        <div class="flex items-center gap-2 pt-5" id="wrap-rcm">
                             <input type="checkbox" id="inv-rcm" onchange="window.updateDraftField('isRcm', this.checked)" class="w-4 h-4 text-emerald-600 rounded border-slate-300">
                             <label for="inv-rcm" class="text-sm font-medium text-slate-700">Reverse Charge Mechanism (RCM)</label>
                         </div>
@@ -285,7 +285,7 @@
                                     </div>
                                     <div><label class="text-sm font-medium text-slate-700 mb-1 block">Mobile Number</label><input type="tel" id="inv-client-mobile" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, mobile: this.value})"></div>
                                     <div><label class="text-sm font-medium text-slate-700 mb-1 block">GSTIN (Optional)</label><input type="text" id="inv-client-gstin" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, gstin: this.value})"></div>
-                                    <div><label class="text-sm font-medium text-slate-700 mb-1 block">Due Date</label><input type="date" id="inv-due-date" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('dueDate', this.value)"></div>
+                                    <div id="wrap-duedate"><label class="text-sm font-medium text-slate-700 mb-1 block">Due Date</label><input type="date" id="inv-due-date" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('dueDate', this.value)"></div>
                                     <div class="col-span-1 md:col-span-3"><label class="text-sm font-medium text-slate-700 mb-1 block">Address / Shipping Details</label><input type="text" id="inv-client-address" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none" oninput="window.updateDraftField('client', {...window.AppState.draft.client, address: this.value})"></div>
                                 </div>
                             </div>
@@ -298,11 +298,8 @@
                                     </div>
                                     <div id="product-suggestions" class="hidden absolute z-20 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
                                 </div>
-                                <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100">
-                                    <table class="w-full text-left text-sm min-w-[650px]">
-                                        <thead class="bg-slate-100 text-slate-600 font-medium"><tr><th class="p-3">Item Name</th><th class="p-3 w-16">HSN</th><th class="p-3 w-16">Qty</th><th class="p-3 w-24">Rate</th><th class="p-3 w-16">GST</th><th class="p-3 w-24 text-right">Total</th><th class="p-3 w-10"></th></tr></thead>
-                                        <tbody id="invoice-items-body"><tr><td colspan="7" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr></tbody>
-                                    </table>
+                                <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100" id="invoice-items-wrapper">
+                                    <!-- Rendered dynamically to respect toggles -->
                                 </div>
                             </div>
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
@@ -322,12 +319,10 @@
                                             <div class="flex items-center w-16 border border-emerald-700 bg-emerald-900/50 rounded overflow-hidden px-1"><input type="number" id="inv-discount" value="0" min="0" oninput="window.updateDraftField('discount', this.value)" class="w-full bg-transparent text-right text-white py-1 outline-none text-sm appearance-none"></div>
                                         </div>
                                     </div>
-                                    <!-- TDS Addition -->
-                                    <div class="flex justify-between items-center pb-2 border-b border-emerald-700">
+                                    <div class="flex justify-between items-center pb-2 border-b border-emerald-700" id="wrap-tds">
                                         <span class="text-emerald-200">TDS %</span>
                                         <div class="flex items-center w-16 border border-emerald-700 bg-emerald-900/50 rounded overflow-hidden px-1"><input type="number" id="inv-tds" value="0" min="0" oninput="window.updateDraftField('tds', this.value)" class="w-full bg-transparent text-right text-white py-1 outline-none text-sm appearance-none"></div>
                                     </div>
-
                                     <div class="flex justify-between text-emerald-300 text-xs pt-1"><span class="">CGST</span><span class="font-mono" id="summary-cgst">0.00</span></div>
                                     <div class="flex justify-between pb-3 border-b border-emerald-700 text-emerald-300 text-xs"><span class="">SGST</span><span class="font-mono" id="summary-sgst">0.00</span></div>
                                     <div class="flex justify-between items-end pt-2"><span class="text-emerald-100 text-lg">Net Payable</span><span class="text-3xl font-bold tracking-tight" id="summary-grand">0.00</span></div>
@@ -417,10 +412,9 @@
                                 <label class="text-sm font-medium text-slate-700 block mb-1">Category</label>
                                 <select id="new-prod-category" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none"><option value="Medicine">Medicine</option><option value="Consultation">Consultation</option><option value="Oils & Syrups">Oils & Syrups</option><option value="Kit/Combo">Kit/Combo</option><option value="Other">Other</option></select>
                             </div>
-                            <div><label class="text-sm font-medium text-slate-700 block mb-1">HSN/SAC Code</label><input type="text" id="new-prod-hsn" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div class="wrap-hsn"><label class="text-sm font-medium text-slate-700 block mb-1">HSN/SAC Code</label><input type="text" id="new-prod-hsn" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             
-                            <!-- Margin Calculator Fields -->
-                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Cost Price (₹)</label><input type="number" id="new-prod-cost" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none" placeholder="Purchase price"></div>
+                            <div class="wrap-margin"><label class="text-sm font-medium text-slate-700 block mb-1">Cost Price (₹)</label><input type="number" id="new-prod-cost" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none" placeholder="Purchase price"></div>
                             <div><label class="text-sm font-medium text-slate-700 block mb-1">Selling Rate (₹)</label><input type="number" id="new-prod-rate" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             
                             <div>
@@ -428,8 +422,8 @@
                                 <select id="new-prod-gst" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white outline-none"><option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option></select>
                             </div>
                             <div><label class="text-sm font-medium text-slate-700 block mb-1">Stock Qty</label><input type="number" id="new-prod-stock" value="0" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Batch No.</label><input type="text" id="new-prod-batch" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                            <div><label class="text-sm font-medium text-slate-700 block mb-1">Expiry Date</label><input type="month" id="new-prod-expiry" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div class="wrap-batch"><label class="text-sm font-medium text-slate-700 block mb-1">Batch No.</label><input type="text" id="new-prod-batch" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
+                            <div class="wrap-batch"><label class="text-sm font-medium text-slate-700 block mb-1">Expiry Date</label><input type="month" id="new-prod-expiry" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             <div class="flex gap-2 md:col-span-2 md:justify-end mt-2">
                                 <button onclick="toggleProductModal(false)" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
                                 <button onclick="saveProduct()" class="px-6 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save Product</button>
@@ -514,12 +508,34 @@
                     <div class="flex justify-between items-end mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-slate-800">System Settings</h2>
-                            <p class="text-slate-500">Business profile, bank details, and security configuration.</p>
+                            <p class="text-slate-500">Business profile, bank details, and module toggles.</p>
                         </div>
                         <button onclick="handleLogout()" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-xl font-bold flex items-center gap-2 transition-all"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
+                        
+                        <!-- Modular Toggles -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 col-span-1 md:col-span-2">
+                            <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2"><i data-lucide="toggle-right" class="w-5 h-5 text-emerald-600"></i> Module & Feature Toggles</h3>
+                            <p class="text-xs text-slate-500 mb-4">Enable or disable advanced ERP features to keep your interface clean and strictly tailored to your workflow.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-medium text-slate-700" id="feature-toggles-container">
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-expenses" class="w-4 h-4 text-emerald-600 rounded"> Expense Tracking Module</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-multiDoc" class="w-4 h-4 text-emerald-600 rounded"> Proformas & Quotations</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-currency" class="w-4 h-4 text-emerald-600 rounded"> Multi-Currency Billing</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-shipping" class="w-4 h-4 text-emerald-600 rounded"> Adv. Shipping & PO Fields</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-tds" class="w-4 h-4 text-emerald-600 rounded"> TDS Deduction %</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-rcm" class="w-4 h-4 text-emerald-600 rounded"> Reverse Charge (RCM)</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-hsn" class="w-4 h-4 text-emerald-600 rounded"> HSN/SAC Codes</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-dueDate" class="w-4 h-4 text-emerald-600 rounded"> Invoice Due Dates</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-ledger" class="w-4 h-4 text-emerald-600 rounded"> Client Ledger / Statement</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-creditNote" class="w-4 h-4 text-emerald-600 rounded"> Credit Notes & Refunds</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-margin" class="w-4 h-4 text-emerald-600 rounded"> Profit Margin Calculator</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="feat-batch" class="w-4 h-4 text-emerald-600 rounded"> Batch & Expiry Tracking</label>
+                            </div>
+                        </div>
+
+                        <!-- Security -->
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 col-span-1 md:col-span-2 flex flex-col md:flex-row gap-6">
                             <div class="flex-1">
                                 <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-emerald-600"></i> App Security & Web Lock</h3>
@@ -534,7 +550,7 @@
                             </div>
                             <div class="flex-1">
                                 <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i> Financial Year Data Lock</h3>
-                                <p class="text-xs text-slate-500 mt-2 mb-2">Prevent modifications to invoices created before this date.</p>
+                                <p class="text-xs text-slate-500 mt-2 mb-2">Prevent modifications to invoices & expenses logged before this date.</p>
                                 <div><label class="text-sm font-medium text-slate-700 block mb-1">Lock Data Before</label><input type="date" id="set-lock-date" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             </div>
                         </div>
@@ -639,7 +655,7 @@
     
     <!-- 100% Reliable Invisible Area for Bulk PDF -->
     <div id="bulk-render-container" class="fixed inset-0 z-[-100] pointer-events-none overflow-hidden" style="visibility: hidden;">
-        <div id="bulk-render-area" class="w-[210mm] bg-white"></div>
+        <div id="bulk-render-area" class="w-[210mm] bg-white absolute top-0 left-0"></div>
     </div>
 
     <!-- Full Screen PDF Generator Blocking Overlay -->
@@ -661,13 +677,14 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        // Currencies Map
+        // Currencies Map & Feature Defaults
         const currencyMap = { 'INR': '₹', 'USD': '$', 'EUR': '€', 'GBP': '£' };
+        const defaultFeatures = { expenses: true, multiDoc: true, currency: true, shipping: true, tds: true, rcm: true, hsn: true, dueDate: true, ledger: true, creditNote: true, margin: true, batch: true };
 
         // Global State
         window.AppState = {
             user: null, activeTab: 'dashboard', products: [], clients: [], invoices: [], expenses: [], revenueChartInst: null, paymentPieChartInst: null,
-            settings: { businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', seal: '', bankName: '', bankAcc: '', bankIfsc: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '', lockDate: '' },
+            settings: { businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', seal: '', bankName: '', bankAcc: '', bankIfsc: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '', lockDate: '', features: defaultFeatures },
             editingProductId: null, editingClientId: null, editingExpenseId: null,
             signupLogoBase64: '', signupSigBase64: '', newExpenseReceiptBase64: '',
             draft: { id: '', docType: 'Tax Invoice', currency: 'INR', items: [], discount: 0, discountType: 'fixed', tds: 0, isRcm: false, poNo: '', vehicleNo: '', ewayBill: '', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', dueDate: '', client: { name: '', mobile: '', gstin: '', address: '' } }
@@ -678,24 +695,23 @@
             { id: 'invoice', icon: 'plus', label: 'Invoice' },
             { id: 'records', icon: 'file-text', label: 'Records' }, 
             { id: 'inventory', icon: 'box', label: 'Inventory' },
-            { id: 'expenses', icon: 'receipt', label: 'Expenses' },
+            { id: 'expenses', icon: 'receipt', label: 'Expenses', class: 'feat-expenses' },
             { id: 'clients', icon: 'users', label: 'Clients' }, 
             { id: 'settings', icon: 'settings', label: 'Settings' }
         ];
 
-        window.formatCurrency = (amt, currency = 'INR') => { const symbol = currencyMap[currency] || '₹'; return `${symbol}${Number(amt).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`; };
+        window.formatCurrency = (amt, currency = 'INR') => { const symbol = currencyMap[currency] || '₹'; return `${symbol}${Number(amt || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`; };
         const formatINR = (amt) => window.formatCurrency(amt, 'INR');
+        window.isFeatureEnabled = (key) => window.AppState.settings.features ? window.AppState.settings.features[key] !== false : true;
         lucide.createIcons();
 
         // --- Custom Toast UI ---
         window.showToast = function(msg, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
+            const container = document.getElementById('toast-container'); const toast = document.createElement('div');
             const bgColor = type === 'error' ? 'bg-red-500' : type === 'warning' ? 'bg-amber-500' : 'bg-emerald-600';
             toast.className = `${bgColor} text-white px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 translate-x-full flex items-center gap-2 font-medium text-sm`;
             toast.innerHTML = type === 'error' ? `<i data-lucide="alert-circle" class="w-4 h-4"></i> ${msg}` : `<i data-lucide="check-circle" class="w-4 h-4"></i> ${msg}`;
-            container.appendChild(toast);
-            lucide.createIcons();
+            container.appendChild(toast); lucide.createIcons();
             requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
             setTimeout(() => { toast.classList.add('opacity-0', 'translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3000);
         }
@@ -770,7 +786,7 @@
                 const cred = await createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-password').value);
                 await setDoc(doc(db, 'artifacts', appId, 'users', cred.user.uid, 'config', 'settings'), {
                     businessName: document.getElementById('signup-biz-name').value, owner: document.getElementById('signup-owner').value, phone: document.getElementById('signup-phone').value, gstin: document.getElementById('signup-gstin').value, address: document.getElementById('signup-address').value,
-                    logo: window.AppState.signupLogoBase64, signature: window.AppState.signupSigBase64, template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: ''
+                    logo: window.AppState.signupLogoBase64, signature: window.AppState.signupSigBase64, template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: '', features: defaultFeatures
                 });
                 window.showToast("Account Created Successfully!");
             } catch (error) { window.showToast("Signup failed: " + error.message, "error"); }
@@ -834,6 +850,8 @@
                         document.getElementById('pin-lock-screen').classList.add('active');
                         document.getElementById('pin-lock-screen').classList.remove('hidden');
                     }
+                    window.applyFeatureVisibility();
+                    renderNavigation();
                 }
             });
         }
@@ -854,10 +872,23 @@
             catch(e) { return ''; }
         }
 
+        // Feature Toggle Display Logic
+        window.applyFeatureVisibility = function() {
+            const check = (id, key) => { const el = document.getElementById(id); if(el) el.style.display = window.isFeatureEnabled(key) ? '' : 'none'; };
+            const checkClass = (cls, key) => { document.querySelectorAll('.'+cls).forEach(el => el.style.display = window.isFeatureEnabled(key) ? '' : 'none'); };
+            
+            check('wrap-multidoc', 'multiDoc'); check('wrap-currency', 'currency'); check('wrap-shipping-toggle', 'shipping');
+            check('wrap-rcm', 'rcm'); check('wrap-tds', 'tds'); check('wrap-duedate', 'dueDate');
+            checkClass('wrap-hsn', 'hsn'); checkClass('wrap-margin', 'margin'); checkClass('wrap-batch', 'batch');
+            checkClass('wrap-expenses-stat', 'expenses');
+        }
+
         function renderNavigation() {
             const desktopNav = document.getElementById('desktop-nav'); const mobileNav = document.getElementById('mobile-nav');
             desktopNav.innerHTML = ''; mobileNav.innerHTML = '';
             navItems.forEach(item => {
+                if(item.class === 'feat-expenses' && !window.isFeatureEnabled('expenses')) return; // Hide Expenses Tab if disabled
+
                 const isActive = window.AppState.activeTab === item.id;
                 const dBtn = document.createElement('button');
                 dBtn.className = `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all w-full text-left ${isActive ? 'nav-desktop-active' : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'}`;
@@ -884,6 +915,7 @@
             if(tabId === 'records') { populateClientFilter(); window.renderRecords(); }
             if(tabId === 'clients') window.renderClients();
             if(tabId === 'settings') populateSettingsUI();
+            window.applyFeatureVisibility();
             window.scrollTo(0,0);
         }
 
@@ -893,7 +925,7 @@
             const products = window.AppState.products || [];
             const expenses = window.AppState.expenses || [];
             
-            const totalRev = finalized.reduce((sum, i) => sum + (i.grandTotal || 0), 0);
+            const totalRev = finalized.reduce((sum, i) => sum + (Number(i.grandTotal) || 0), 0);
             const totalExp = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
             const netProfit = totalRev - totalExp;
             const grossMargin = totalRev > 0 ? ((netProfit / totalRev) * 100).toFixed(1) : 0;
@@ -903,26 +935,25 @@
             const elRev = document.getElementById('dash-revenue'); if(elRev) elRev.textContent = formatINR(totalRev);
             const elExp = document.getElementById('dash-expenses'); if(elExp) elExp.textContent = formatINR(totalExp);
             
-            // Ledger & Liability
-            const outputTax = finalized.reduce((sum, i) => sum + (i.totalTax || 0), 0);
+            const outputTax = finalized.reduce((sum, i) => sum + (Number(i.totalTax) || 0), 0);
             const inputTax = expenses.reduce((sum, e) => sum + (Number(e.gstAmount) || 0), 0);
             const netTax = outputTax - inputTax;
             
-            const unpaidDues = finalized.filter(i => i.paymentStatus !== 'paid').reduce((sum, i) => sum + (i.grandTotal || 0), 0);
+            const unpaidDues = finalized.filter(i => i.paymentStatus !== 'paid').reduce((sum, i) => sum + (Number(i.grandTotal) || 0), 0);
             let cashL = 0, bankL = 0;
-            finalized.filter(i => i.paymentStatus === 'paid').forEach(i => { if(i.paymentMode === 'cash') cashL += i.grandTotal; else bankL += i.grandTotal; });
+            finalized.filter(i => i.paymentStatus === 'paid').forEach(i => { if(i.paymentMode === 'cash') cashL += Number(i.grandTotal); else bankL += Number(i.grandTotal); });
 
             const elTax = document.getElementById('dash-tax'); if(elTax) elTax.textContent = formatINR(netTax);
             const elUnpaid = document.getElementById('dash-unpaid'); if(elUnpaid) elUnpaid.textContent = formatINR(unpaidDues);
             const elCash = document.getElementById('dash-cash'); if(elCash) elCash.textContent = formatINR(cashL);
             const elBank = document.getElementById('dash-bank'); if(elBank) elBank.textContent = formatINR(bankL);
 
-            // Cashflow Chart (Rev vs Exp)
+            // Cashflow Chart
             const ctxRevEl = document.getElementById('revenueChart');
             if (ctxRevEl) {
                 const ctxRev = ctxRevEl.getContext('2d');
                 const last7Days = Array.from({length: 7}, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0]; }).reverse();
-                const revData = last7Days.map(date => finalized.filter(inv => inv.date === date).reduce((sum, inv) => sum + inv.grandTotal, 0));
+                const revData = last7Days.map(date => finalized.filter(inv => inv.date === date).reduce((sum, inv) => sum + Number(inv.grandTotal), 0));
                 const expData = last7Days.map(date => expenses.filter(e => e.date === date).reduce((sum, e) => sum + Number(e.amount), 0));
 
                 if (window.AppState.revenueChartInst) window.AppState.revenueChartInst.destroy();
@@ -936,22 +967,28 @@
                 });
             }
 
-            // AR Aging Report logic
-            const today = new Date();
-            let d0_30 = 0, d31_60 = 0, d60plus = 0;
+            // Payment Pie Chart
+            const ctxPieEl = document.getElementById('paymentPieChart');
+            if (ctxPieEl) {
+                const ctxPie = ctxPieEl.getContext('2d');
+                let upiCount = 0, cashCount = 0;
+                finalized.forEach(inv => { if(inv.paymentMode === 'upi') upiCount++; else cashCount++; });
+                if (window.AppState.paymentPieChartInst) window.AppState.paymentPieChartInst.destroy();
+                window.AppState.paymentPieChartInst = new Chart(ctxPie, {
+                    type: 'doughnut', data: { labels: ['UPI/Bank', 'Cash'], datasets: [{ data: [upiCount, cashCount], backgroundColor: ['#3b82f6', '#22c55e'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            // AR Aging Report
+            const today = new Date(); let d0_30 = 0, d31_60 = 0, d60plus = 0;
             finalized.filter(i => i.paymentStatus !== 'paid').forEach(inv => {
                 const ageDays = (today - new Date(inv.date)) / (1000 * 60 * 60 * 24);
-                if(ageDays <= 30) d0_30 += inv.grandTotal;
-                else if(ageDays <= 60) d31_60 += inv.grandTotal;
-                else d60plus += inv.grandTotal;
+                if(ageDays <= 30) d0_30 += Number(inv.grandTotal); else if(ageDays <= 60) d31_60 += Number(inv.grandTotal); else d60plus += Number(inv.grandTotal);
             });
             const agingEl = document.getElementById('dash-aging');
             if(agingEl) {
-                agingEl.innerHTML = `
-                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg"><span class="text-sm font-medium text-slate-600">0 - 30 Days</span><span class="font-bold text-slate-800">${formatINR(d0_30)}</span></div>
-                    <div class="flex justify-between items-center bg-amber-50 p-3 rounded-lg"><span class="text-sm font-medium text-amber-700">31 - 60 Days</span><span class="font-bold text-amber-800">${formatINR(d31_60)}</span></div>
-                    <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg"><span class="text-sm font-medium text-red-700">60+ Days (Overdue)</span><span class="font-bold text-red-800">${formatINR(d60plus)}</span></div>
-                `;
+                agingEl.innerHTML = `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg"><span class="text-sm font-medium text-slate-600">0 - 30 Days</span><span class="font-bold text-slate-800">${formatINR(d0_30)}</span></div><div class="flex justify-between items-center bg-amber-50 p-3 rounded-lg"><span class="text-sm font-medium text-amber-700">31 - 60 Days</span><span class="font-bold text-amber-800">${formatINR(d31_60)}</span></div><div class="flex justify-between items-center bg-red-50 p-3 rounded-lg"><span class="text-sm font-medium text-red-700">60+ Days (Overdue)</span><span class="font-bold text-red-800">${formatINR(d60plus)}</span></div>`;
             }
 
             const elRecent = document.getElementById('dash-recent-activity');
@@ -989,7 +1026,6 @@
 
             if(!date || !amount) return window.showToast("Date and Amount required.", "error");
 
-            // Check Financial Year Lock
             const lockDate = window.AppState.settings.lockDate;
             if(lockDate && new Date(date) < new Date(lockDate)) return window.showToast(`Cannot modify data before FY Lock Date: ${lockDate}`, "error");
 
@@ -1044,7 +1080,7 @@
         window.setPaymentMode = function(mode) { window.AppState.draft.paymentMode = mode; window.updateInvoiceUI(); }
 
         window.calculateInvoiceTotals = function() {
-            let subtotal = 0, totalTax = 0; window.AppState.draft.items.forEach(item => { const lineTotal = item.qty * item.rate; totalTax += lineTotal * (item.gst / 100); subtotal += lineTotal; });
+            let subtotal = 0, totalTax = 0; window.AppState.draft.items.forEach(item => { const lineTotal = Number(item.qty) * Number(item.rate); totalTax += lineTotal * (Number(item.gst) / 100); subtotal += lineTotal; });
             let discountInput = Number(window.AppState.draft.discount) || 0; let discountAmt = window.AppState.draft.discountType === 'percent' ? (subtotal * (discountInput / 100)) : discountInput;
             let tdsAmt = Number(window.AppState.draft.tds) > 0 ? (subtotal * (Number(window.AppState.draft.tds) / 100)) : 0;
             const grandTotal = Math.max(0, subtotal + totalTax - discountAmt - tdsAmt);
@@ -1055,9 +1091,10 @@
             document.getElementById('summary-tax').textContent = window.formatCurrency(totalTax, curr); 
             document.getElementById('summary-grand').textContent = window.formatCurrency(grandTotal, curr);
             
-            // Auto-Split CGST & SGST
-            document.getElementById('summary-cgst').textContent = window.formatCurrency(totalTax / 2, curr);
-            document.getElementById('summary-sgst').textContent = window.formatCurrency(totalTax / 2, curr);
+            // Auto-Split CGST & SGST Fix
+            const halfTax = totalTax / 2;
+            document.getElementById('summary-cgst').textContent = window.formatCurrency(halfTax, curr);
+            document.getElementById('summary-sgst').textContent = window.formatCurrency(halfTax, curr);
 
             const qrWrapper = document.getElementById('qr-image-wrapper');
             if(grandTotal > 0 && window.AppState.draft.paymentMode === 'upi' && curr === 'INR') {
@@ -1081,9 +1118,14 @@
             const curr = window.AppState.draft.currency || 'INR';
             if(items.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">No items added yet.</td></tr>`; } 
             else {
-                tbody.innerHTML = items.map(item => `<tr class="border-b border-slate-100 last:border-0 bg-white"><td class="p-3 font-medium text-slate-800 min-w-[120px]">${item.name} ${(item.batch || item.expiry) ? `<br><span class="text-[9px] text-slate-400">B:${item.batch||'-'} E:${item.expiry||'-'}</span>` : ''}</td><td class="p-3"><input type="text" class="w-16 p-1 border border-slate-200 rounded outline-none text-xs" value="${item.hsn || ''}" onchange="updateDraftItem('${item.id}', 'hsn', this.value)" placeholder="HSN"></td><td class="p-3"><input type="number" min="1" class="w-16 p-1 border border-slate-200 rounded outline-none" value="${item.qty}" onchange="updateDraftItem('${item.id}', 'qty', this.value)"></td><td class="p-3"><input type="number" class="w-20 p-1 border border-slate-200 rounded outline-none" value="${item.rate}" onchange="updateDraftItem('${item.id}', 'rate', this.value)"></td><td class="p-3 text-slate-600">${item.gst}%</td><td class="p-3 text-right font-medium text-emerald-700">${window.formatCurrency(item.qty * item.rate, curr)}</td><td class="p-3 text-center"><button onclick="removeDraftItem('${item.id}')" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`).join('');
+                tbody.innerHTML = items.map(item => `<tr class="border-b border-slate-100 last:border-0 bg-white"><td class="p-3 font-medium text-slate-800 min-w-[120px]">${item.name} ${(window.isFeatureEnabled('batch') && (item.batch || item.expiry)) ? `<br><span class="text-[9px] text-slate-400">B:${item.batch||'-'} E:${item.expiry||'-'}</span>` : ''}</td>${window.isFeatureEnabled('hsn') ? `<td class="p-3"><input type="text" class="w-16 p-1 border border-slate-200 rounded outline-none text-xs" value="${item.hsn || ''}" onchange="updateDraftItem('${item.id}', 'hsn', this.value)" placeholder="HSN"></td>` : ''}<td class="p-3"><input type="number" min="1" class="w-16 p-1 border border-slate-200 rounded outline-none" value="${item.qty}" onchange="updateDraftItem('${item.id}', 'qty', this.value)"></td><td class="p-3"><input type="number" class="w-20 p-1 border border-slate-200 rounded outline-none" value="${item.rate}" onchange="updateDraftItem('${item.id}', 'rate', this.value)"></td><td class="p-3 text-slate-600">${item.gst}%</td><td class="p-3 text-right font-medium text-emerald-700">${window.formatCurrency(Number(item.qty) * Number(item.rate), curr)}</td><td class="p-3 text-center"><button onclick="removeDraftItem('${item.id}')" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`).join('');
                 lucide.createIcons();
             }
+            
+            // Adjust table header dynamically
+            const theadHtml = `<tr><th class="p-3">Item Name</th>${window.isFeatureEnabled('hsn') ? '<th class="p-3 w-16">HSN</th>' : ''}<th class="p-3 w-16">Qty</th><th class="p-3 w-24">Rate</th><th class="p-3 w-16">GST</th><th class="p-3 w-24 text-right">Total</th><th class="p-3 w-10"></th></tr>`;
+            document.getElementById('invoice-items-wrapper').innerHTML = `<table class="w-full text-left text-sm min-w-[650px]"><thead class="bg-slate-100 text-slate-600 font-medium">${theadHtml}</thead><tbody id="invoice-items-body">${tbody.innerHTML}</tbody></table>`;
+
             const m = window.AppState.draft.paymentMode;
             document.getElementById('btn-mode-upi').className = `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${m === 'upi' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`;
             document.getElementById('btn-mode-cash').className = `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${m === 'cash' ? 'bg-white shadow-sm text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`;
@@ -1094,20 +1136,18 @@
 
         window.resumeDraft = function(id) { const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; window.AppState.draft = JSON.parse(JSON.stringify(inv)); switchTab('invoice'); }
         window.issueCreditNote = function(id) { 
+            if(!window.isFeatureEnabled('creditNote')) return;
             const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return; 
-            if(!confirm(`Issue Credit Note for ${inv.id}? This will create a negative duplicate.`)) return;
             const cnDraft = JSON.parse(JSON.stringify(inv));
             cnDraft.id = getNextInvoiceId(); cnDraft.docType = 'Credit Note'; cnDraft.status = 'draft';
-            // Negate items
             cnDraft.items = cnDraft.items.map(item => ({...item, qty: -Math.abs(item.qty)}));
-            window.AppState.draft = cnDraft; switchTab('invoice');
+            window.AppState.draft = cnDraft; switchTab('invoice'); window.showToast("Credit Note Generated as Draft");
         }
 
         window.saveInvoice = async function(status) {
             const name = document.getElementById('inv-client-name').value.trim(); if(!name) return window.showToast("Please specify a client name.", "error");
             if(window.AppState.draft.items.length === 0) return window.showToast("Add at least one product.", "error");
             
-            // FY Lock validation
             const lockDate = window.AppState.settings.lockDate;
             const invDate = new Date().toISOString().split('T')[0];
             if(lockDate && new Date(invDate) < new Date(lockDate)) return window.showToast(`Cannot generate before FY Lock Date: ${lockDate}`, "error");
@@ -1153,8 +1193,10 @@
         window.renderInventory = function() {
             const query = (document.getElementById('inventory-search')?.value || '').toLowerCase(); const filtered = window.AppState.products.filter(p => p.name.toLowerCase().includes(query));
             document.getElementById('inventory-list').innerHTML = filtered.map(p => {
-                const margin = (p.cost && p.rate) ? (((p.rate - p.cost) / p.cost) * 100).toFixed(0) : null;
-                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between ${p.isHidden ? 'opacity-60 bg-slate-50' : ''}"><div><div class="flex justify-between items-start mb-2"><h4 class="font-bold text-slate-800 truncate pr-2">${p.name}</h4><span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">GST ${p.gst}%</span></div><div class="text-2xl font-bold text-slate-700 mb-2">₹${p.rate} <span class="text-xs font-normal text-slate-400">/ ${p.category||'Medicine'}</span></div>${margin ? `<div class="text-xs font-bold text-emerald-600 mb-1">Margin: ${margin}%</div>` : ''}${(p.batch || p.expiry || p.hsn) ? `<div class="text-[10px] text-slate-500 mt-1 border-t border-slate-100 pt-2">${p.hsn ? `HSN: ${p.hsn} • ` : ''}Batch: ${p.batch||'N/A'} • Exp: ${p.expiry||'N/A'}</div>` : ''}</div><div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs ${p.stock <= 10 ? 'text-red-600 font-bold' : 'text-slate-500'}">Stock: ${p.stock || 0}</span><div><button onclick="editProduct('${p.id}')" class="text-xs text-blue-500 hover:text-blue-700 border border-slate-200 px-3 py-1 rounded hover:bg-blue-50 transition-colors mr-1">Edit</button><button onclick="toggleHideProduct('${p.id}', ${p.isHidden})" class="text-xs text-slate-500 hover:text-emerald-600 border border-slate-200 px-3 py-1 rounded hover:bg-emerald-50 transition-colors">${p.isHidden ? 'Unhide' : 'Archive'}</button></div></div></div>`;
+                const margin = (p.cost && p.rate && window.isFeatureEnabled('margin')) ? (((p.rate - p.cost) / p.cost) * 100).toFixed(0) : null;
+                const batchExpStr = window.isFeatureEnabled('batch') && (p.batch || p.expiry) ? `Batch: ${p.batch||'N/A'} • Exp: ${p.expiry||'N/A'}` : '';
+                const hsnStr = window.isFeatureEnabled('hsn') && p.hsn ? `HSN: ${p.hsn} ` : '';
+                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between ${p.isHidden ? 'opacity-60 bg-slate-50' : ''}"><div><div class="flex justify-between items-start mb-2"><h4 class="font-bold text-slate-800 truncate pr-2">${p.name}</h4><span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">GST ${p.gst}%</span></div><div class="text-2xl font-bold text-slate-700 mb-2">₹${p.rate} <span class="text-xs font-normal text-slate-400">/ ${p.category||'Medicine'}</span></div>${margin ? `<div class="text-xs font-bold text-emerald-600 mb-1">Margin: ${margin}%</div>` : ''}${(batchExpStr || hsnStr) ? `<div class="text-[10px] text-slate-500 mt-1 border-t border-slate-100 pt-2">${hsnStr ? hsnStr + '• ' : ''}${batchExpStr}</div>` : ''}</div><div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs ${p.stock <= 10 ? 'text-red-600 font-bold' : 'text-slate-500'}">Stock: ${p.stock || 0}</span><div><button onclick="editProduct('${p.id}')" class="text-xs text-blue-500 hover:text-blue-700 border border-slate-200 px-3 py-1 rounded hover:bg-blue-50 transition-colors mr-1">Edit</button><button onclick="toggleHideProduct('${p.id}', ${p.isHidden})" class="text-xs text-slate-500 hover:text-emerald-600 border border-slate-200 px-3 py-1 rounded hover:bg-emerald-50 transition-colors">${p.isHidden ? 'Unhide' : 'Archive'}</button></div></div></div>`;
             }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No products found.</div>';
         }
 
@@ -1164,8 +1206,7 @@
         window.setFinancialYear = function() {
             const today = new Date(); const m = today.getMonth(); const y = today.getFullYear();
             const startYear = m >= 3 ? y : y - 1; const endYear = startYear + 1;
-            document.getElementById('filter-start').value = `${startYear}-04-01`;
-            document.getElementById('filter-end').value = `${endYear}-03-31`;
+            document.getElementById('filter-start').value = `${startYear}-04-01`; document.getElementById('filter-end').value = `${endYear}-03-31`;
             window.renderRecords(); window.showToast(`Showing FY ${startYear}-${endYear}`);
         }
 
@@ -1174,22 +1215,25 @@
             const query = document.getElementById('filter-search').value.toLowerCase(); const start = document.getElementById('filter-start').value; const end = document.getElementById('filter-end').value; const payStatus = document.getElementById('filter-payment').value;
             const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus); });
             
-            const collectedTax = filtered.filter(i => i.status === 'final' && i.docType === 'Tax Invoice').reduce((sum, i) => sum + (i.totalTax || 0), 0);
+            const collectedTax = filtered.filter(i => i.status === 'final' && i.docType === 'Tax Invoice').reduce((sum, i) => sum + (Number(i.totalTax) || 0), 0);
             document.getElementById('records-tax-summary').textContent = formatINR(collectedTax);
 
-            document.getElementById('records-list').innerHTML = filtered.map(inv => `<tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white"><td class="p-4 font-mono text-emerald-700 text-sm">${inv.id}</td><td class="p-4 text-xs font-bold text-slate-500 uppercase">${inv.docType || 'Tax Invoice'}</td><td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td><td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td><td class="p-4 text-right font-bold ${inv.docType === 'Credit Note' ? 'text-red-600' : 'text-slate-800'}">${window.formatCurrency(inv.grandTotal, inv.currency)}</td><td class="p-4 text-center">${inv.status === 'draft' || inv.docType === 'Credit Note' ? `<span class="text-[10px] text-slate-400 font-bold uppercase">N/A</span>` : `<button onclick="togglePaymentStatus('${inv.id}', '${inv.paymentStatus || 'unpaid'}')" class="text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-colors ${inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-sm' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'}">${inv.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</button>`}</td><td class="p-4 text-center">${inv.status === 'draft' ? `<button onclick="resumeDraft('${inv.id}')" class="px-2 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>` : `<div class="flex items-center gap-1 justify-center"><button onclick="viewInvoice('${inv.id}')" class="px-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View PDF</button><button onclick="issueCreditNote('${inv.id}')" title="Issue Credit Note" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"></path></svg></button></div>`}</td></tr>`).join('') || '<tr><td colspan="7" class="p-8 text-center text-slate-400">No records found matching filters.</td></tr>';
+            document.getElementById('records-list').innerHTML = filtered.map(inv => `<tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white"><td class="p-4 font-mono text-emerald-700 text-sm">${inv.id}</td><td class="p-4 text-xs font-bold text-slate-500 uppercase">${inv.docType || 'Tax Invoice'}</td><td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td><td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td><td class="p-4 text-right font-bold ${inv.docType === 'Credit Note' ? 'text-red-600' : 'text-slate-800'}">${window.formatCurrency(inv.grandTotal, inv.currency)}</td><td class="p-4 text-center">${inv.status === 'draft' || inv.docType === 'Credit Note' ? `<span class="text-[10px] text-slate-400 font-bold uppercase">N/A</span>` : `<button onclick="togglePaymentStatus('${inv.id}', '${inv.paymentStatus || 'unpaid'}')" class="text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-colors ${inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-sm' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'}">${inv.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</button>`}</td><td class="p-4 text-center">${inv.status === 'draft' ? `<button onclick="resumeDraft('${inv.id}')" class="px-2 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>` : `<div class="flex items-center gap-1 justify-center"><button onclick="viewInvoice('${inv.id}')" class="px-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View PDF</button>${window.isFeatureEnabled('creditNote') ? `<button onclick="issueCreditNote('${inv.id}')" title="Issue Credit Note" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"></path></svg></button>`:''}</div>`}</td></tr>`).join('') || '<tr><td colspan="7" class="p-8 text-center text-slate-400">No records found matching filters.</td></tr>';
         }
 
-        // 100% Reliable Bulk PDF using an on-screen overlay method
+        // 100% Reliable Bulk PDF Fix
         window.bulkExportPDF = async function() {
             const query = document.getElementById('filter-search').value.toLowerCase(); const start = document.getElementById('filter-start').value; const end = document.getElementById('filter-end').value; const payStatus = document.getElementById('filter-payment').value;
             const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus) && i.status === 'final'; });
             if(filtered.length === 0) return window.showToast("No finalized invoices found in current filter.", "warning"); 
+            if(filtered.length > 20 && !confirm(`Generate bulk PDF for ${filtered.length} invoices? This may take a moment.`)) return;
             
             document.getElementById('pdf-loading-overlay').classList.remove('hidden'); document.getElementById('pdf-loading-overlay').classList.add('flex');
             const renderContainer = document.getElementById('bulk-render-container'); const bulkArea = document.getElementById('bulk-render-area'); 
             
-            renderContainer.style.visibility = 'visible'; renderContainer.style.zIndex = '9998'; bulkArea.innerHTML = '';
+            // Critical Fix for Bulk Blank Pages: Must be visible but under the loading overlay
+            renderContainer.style.visibility = 'visible'; renderContainer.style.zIndex = '9998'; renderContainer.style.opacity = '1'; bulkArea.innerHTML = '';
+            
             filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = window.generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; wrapper.className = 'px-10 py-12'; bulkArea.appendChild(wrapper); });
             
             setTimeout(async () => {
@@ -1198,10 +1242,10 @@
                     window.showToast("Bulk PDF Downloaded Successfully!");
                 } catch(e) { window.showToast("Error generating PDF", "error"); } 
                 finally {
-                    bulkArea.innerHTML = ''; renderContainer.style.visibility = 'hidden'; renderContainer.style.zIndex = '-100';
+                    bulkArea.innerHTML = ''; renderContainer.style.visibility = 'hidden'; renderContainer.style.zIndex = '-100'; renderContainer.style.opacity = '0';
                     document.getElementById('pdf-loading-overlay').classList.add('hidden'); document.getElementById('pdf-loading-overlay').classList.remove('flex');
                 }
-            }, 800);
+            }, 1500); // 1.5s delay to guarantee DOM renders complex nodes before capture
         }
 
         window.exportCSV = function() {
@@ -1222,8 +1266,8 @@
             const query = (document.getElementById('clients-search')?.value || '').toLowerCase(); const invoices = window.AppState.invoices;
             const filteredClients = window.AppState.clients.filter(c => c.name.toLowerCase().includes(query) || (c.mobile && c.mobile.includes(query)));
             document.getElementById('clients-list').innerHTML = filteredClients.map(c => {
-                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final'); const clv = cInvoices.reduce((sum, i) => sum + i.grandTotal, 0);
-                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between"><div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">${c.name.charAt(0)}</div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 truncate">${c.name}</h4><div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div></div><div class="text-right shrink-0"><div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div><div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div><div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div></div></div>${c.notes ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-3 border border-slate-100 line-clamp-2 italic"><strong>Notes:</strong> ${c.notes}</div>` : ''}<div class="flex gap-2"><button onclick="editClient('${c.id}')" class="flex-1 text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider">Edit</button><button onclick="generateClientLedger('${c.name}')" class="flex-1 text-[10px] px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 font-bold uppercase tracking-wider">Ledger PDF</button></div></div>`
+                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final'); const clv = cInvoices.reduce((sum, i) => sum + Number(i.grandTotal), 0);
+                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between"><div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">${c.name.charAt(0)}</div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 truncate">${c.name}</h4><div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div></div><div class="text-right shrink-0"><div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div><div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div><div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div></div></div>${c.notes ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-3 border border-slate-100 line-clamp-2 italic"><strong>Notes:</strong> ${c.notes}</div>` : ''}<div class="flex gap-2"><button onclick="editClient('${c.id}')" class="flex-1 text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider">Edit</button>${window.isFeatureEnabled('ledger') ? `<button onclick="generateClientLedger('${c.name}')" class="flex-1 text-[10px] px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 font-bold uppercase tracking-wider">Ledger PDF</button>`:''}</div></div>`
             }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No clients found.</div>';
         }
 
@@ -1234,7 +1278,7 @@
             
             let runningBal = 0;
             const rows = clientInvs.map(inv => {
-                const amount = inv.grandTotal; const isPaid = inv.paymentStatus === 'paid';
+                const amount = Number(inv.grandTotal); const isPaid = inv.paymentStatus === 'paid';
                 if(!isPaid) runningBal += amount;
                 return `<tr class="border-b border-slate-200"><td class="py-2">${inv.date}</td><td class="py-2">${inv.id}</td><td class="py-2 text-right">₹${amount.toFixed(2)}</td><td class="py-2 text-center text-xs ${isPaid ? 'text-green-600 font-bold' : 'text-red-500'}">${isPaid ? 'Paid' : 'Unpaid'}</td><td class="py-2 text-right font-bold">₹${runningBal.toFixed(2)}</td></tr>`;
             }).join('');
@@ -1259,18 +1303,31 @@
             if(s.signature) document.getElementById('sig-preview').innerHTML = `<img src="${s.signature}" class="w-full h-full object-contain">`;
             if(s.seal) document.getElementById('seal-preview').innerHTML = `<img src="${s.seal}" class="w-full h-full object-contain">`;
             window.setTemplate(s.template || 'modern');
+
+            // Feature Toggles UI Map
+            const f = s.features || defaultFeatures;
+            const toggles = ['expenses', 'multiDoc', 'currency', 'shipping', 'tds', 'rcm', 'hsn', 'dueDate', 'ledger', 'creditNote', 'margin', 'batch'];
+            toggles.forEach(t => { const el = document.getElementById(`feat-${t}`); if(el) el.checked = f[t] !== false; });
         }
+
         window.setTemplate = function(tpl) { window.AppState.settings.template = tpl; ['modern', 'classic', 'minimal', 'compact', 'elegant', 'bold', 'nature', 'corporate'].forEach(t => { const btn = document.getElementById(`tpl-${t}`); if(btn) btn.className = t === tpl ? `p-2 border rounded-xl text-center border-emerald-500 bg-emerald-50 shadow-sm` : `p-2 border rounded-xl text-center border-slate-200 hover:border-emerald-300 bg-white opacity-60`; }); }
+        
         window.saveSettings = async function() {
             try {
                 const s = window.AppState.settings; s.businessName = document.getElementById('set-biz-name').value; s.gstin = document.getElementById('set-biz-gstin').value; s.address = document.getElementById('set-biz-address').value; s.phone = document.getElementById('set-biz-phone').value; s.upi = document.getElementById('set-biz-upi').value; s.customTerms = document.getElementById('set-biz-terms').value; s.logoDisplay = document.getElementById('set-biz-logo-display').value;
                 s.lockDate = document.getElementById('set-lock-date').value; s.bankName = document.getElementById('set-bank-name').value; s.bankAcc = document.getElementById('set-bank-acc').value; s.bankIfsc = document.getElementById('set-bank-ifsc').value;
+                
+                s.features = {}; const toggles = ['expenses', 'multiDoc', 'currency', 'shipping', 'tds', 'rcm', 'hsn', 'dueDate', 'ledger', 'creditNote', 'margin', 'batch'];
+                toggles.forEach(t => { const el = document.getElementById(`feat-${t}`); if(el) s.features[t] = el.checked; });
+
                 const wantPin = document.getElementById('set-pin-enable').checked; const curPinInp = document.getElementById('set-pin-current').value; const newPinInp = document.getElementById('set-pin-new').value;
                 if (wantPin && !s.pinEnabled) { if(newPinInp.length !== 4) return window.showToast("New PIN must be exactly 4 digits.", "error"); s.pinEnabled = true; s.pin = newPinInp; } 
                 else if (wantPin && s.pinEnabled && newPinInp.length === 4) { if(curPinInp !== s.pin) return window.showToast("Current PIN is incorrect.", "error"); s.pin = newPinInp; } 
                 else if (!wantPin) { s.pinEnabled = false; s.pin = ''; }
                 await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'config', 'settings'), s); window.showToast("Settings saved securely!");
                 document.getElementById('set-pin-current').value = ''; document.getElementById('set-pin-new').value = '';
+                
+                window.applyFeatureVisibility(); window.renderNavigation();
             } catch(e) { window.showToast("Failed to save settings.", "error"); }
         }
 
@@ -1280,7 +1337,7 @@
 
         window.generateInvoiceHTML = function(inv) {
             const s = window.AppState.settings; const tpl = s.template || 'modern'; const curr = inv.currency || 'INR';
-            let paymentQR = ''; if(inv.grandTotal > 0 && s.upi && curr === 'INR') { const upiStr = `upi://pay?pa=${s.upi}&pn=${encodeURIComponent(s.businessName)}&am=${inv.grandTotal.toFixed(2)}&cu=INR`; paymentQR = `<img src="${window.generateLocalQR(upiStr)}" class="w-20 h-20 border border-slate-200 p-1 rounded bg-white shadow-sm">`; }
+            let paymentQR = ''; if(Number(inv.grandTotal) > 0 && s.upi && curr === 'INR') { const upiStr = `upi://pay?pa=${s.upi}&pn=${encodeURIComponent(s.businessName)}&am=${Number(inv.grandTotal).toFixed(2)}&cu=INR`; paymentQR = `<img src="${window.generateLocalQR(upiStr)}" class="w-20 h-20 border border-slate-200 p-1 rounded bg-white shadow-sm">`; }
             const digitalURL = `https://dev-ayurveda.web.app/verify/${inv.id}`; const digitalQR = `<img src="${window.generateLocalQR(digitalURL)}" class="w-20 h-20 border border-slate-200 p-1 rounded bg-white shadow-sm">`;
 
             let logoHtml = ''; const dispStyle = s.logoDisplay || 'both';
@@ -1291,7 +1348,11 @@
             const sigHtml = s.signature ? `<img src="${s.signature}" class="h-10 object-contain mx-auto mb-1 relative z-10">` : `<div class="h-10 border-b-2 border-slate-200 mb-1 mx-4 w-40"></div>`;
             const sealHtml = s.seal ? `<img src="${s.seal}" class="w-16 h-16 object-contain absolute opacity-50 -left-6 -top-2 mix-blend-multiply">` : '';
 
-            const itemsHtml = inv.items.map((item, idx) => `<tr class="border-b ${tpl === 'bold' ? 'border-black' : 'border-slate-200'}"><td class="py-2 text-center align-top">${idx + 1}</td><td class="py-2 align-top"><div class="font-bold text-slate-800">${item.name}</div>${(item.batch || item.expiry || item.hsn) ? `<div class="text-[10px] text-slate-500 mt-1 font-medium">${item.hsn ? `HSN: ${item.hsn} | ` : ''}Batch: ${item.batch||'-'} | Exp: ${item.expiry||'-'}</div>` : ''}</td><td class="py-2 text-center align-top font-medium">${item.qty}</td><td class="py-2 text-right align-top text-slate-600">${window.formatCurrency(item.rate, curr)}</td><td class="py-2 text-center align-top text-slate-600">${item.gst}%</td><td class="py-2 text-right font-bold align-top text-slate-800">${window.formatCurrency(item.qty * item.rate, curr)}</td></tr>`).join('');
+            const thHsn = window.isFeatureEnabled('hsn') ? '<th class="py-2 px-2 text-center w-16">HSN</th>' : '';
+            const itemsHtml = inv.items.map((item, idx) => {
+                const tdHsn = window.isFeatureEnabled('hsn') ? `<td class="py-2 text-center align-top text-[11px]">${item.hsn || '-'}</td>` : '';
+                return `<tr class="border-b ${tpl === 'bold' ? 'border-black' : 'border-slate-200'}"><td class="py-2 text-center align-top">${idx + 1}</td><td class="py-2 align-top"><div class="font-bold text-slate-800">${item.name}</div>${(window.isFeatureEnabled('batch') && (item.batch || item.expiry)) ? `<div class="text-[10px] text-slate-500 mt-1 font-medium">Batch: ${item.batch||'-'} | Exp: ${item.expiry||'-'}</div>` : ''}</td>${tdHsn}<td class="py-2 text-center align-top font-medium">${item.qty}</td><td class="py-2 text-right align-top text-slate-600">${window.formatCurrency(item.rate, curr)}</td><td class="py-2 text-center align-top text-slate-600">${item.gst}%</td><td class="py-2 text-right font-bold align-top text-slate-800">${window.formatCurrency(item.qty * item.rate, curr)}</td></tr>`;
+            }).join('');
 
             let headerStyles = ''; let tableHeadStyles = ''; let totalStyles = ''; let fontClass = 'font-sans';
             if(tpl === 'modern') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-emerald-600"></div>'; tableHeadStyles = 'bg-slate-800 text-white'; totalStyles = 'text-emerald-700'; }
@@ -1303,7 +1364,7 @@
             if(tpl === 'nature') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-gradient-to-r from-green-500 to-emerald-700"></div>'; tableHeadStyles = 'bg-green-800 text-green-50'; totalStyles = 'text-green-800'; }
             if(tpl === 'corporate') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-blue-900"></div>'; tableHeadStyles = 'bg-blue-900 text-white'; totalStyles = 'text-blue-900'; }
 
-            const cgst = (inv.totalTax / 2).toFixed(2); const sgst = (inv.totalTax / 2).toFixed(2);
+            const taxAmt = Number(inv.totalTax) || 0; const cgst = taxAmt / 2; const sgst = taxAmt / 2;
 
             return `
             <div class="inv-id-tracker ${fontClass} relative w-full h-full flex flex-col justify-between bg-white" data-id="${inv.id}">
@@ -1318,24 +1379,24 @@
                         </div>
                         <div class="${tpl === 'elegant' ? 'text-center mt-6 w-full border-t border-slate-200 pt-4 flex justify-between' : 'text-right'}">
                             ${tpl !== 'elegant' ? `<h2 class="text-4xl font-light text-slate-300 uppercase tracking-widest mb-3 ${tpl==='bold' ? 'text-black font-black' : ''}">${inv.docType || 'Tax Invoice'}</h2>` : `<h2 class="text-2xl font-bold uppercase tracking-widest">${inv.docType || 'Tax Invoice'}</h2>`}
-                            <div><div class="font-bold text-slate-800 text-lg tracking-wide">${inv.id}</div><div class="text-slate-500 font-medium text-xs mt-1">Date: ${inv.date}</div>${inv.dueDate ? `<div class="text-red-500 font-bold mt-1 text-xs">Due: ${inv.dueDate}</div>` : ''}</div>
-                            ${inv.isRcm ? `<div class="inline-block mt-2 px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold uppercase tracking-wider rounded">RCM Applied</div>` : ''}
+                            <div><div class="font-bold text-slate-800 text-lg tracking-wide">${inv.id}</div><div class="text-slate-500 font-medium text-xs mt-1">Date: ${inv.date}</div>${(window.isFeatureEnabled('dueDate') && inv.dueDate) ? `<div class="text-red-500 font-bold mt-1 text-xs">Due: ${inv.dueDate}</div>` : ''}</div>
+                            ${(window.isFeatureEnabled('rcm') && inv.isRcm) ? `<div class="inline-block mt-2 px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold uppercase tracking-wider rounded">RCM Applied</div>` : ''}
                         </div>
                     </div>
                     <div class="mb-8 ${tpl === 'bold' ? 'border-l-8 border-black' : tpl === 'nature' ? 'border-l-4 border-green-600 bg-green-50' : tpl === 'corporate' ? 'border-l-4 border-blue-900 bg-slate-50' : tpl === 'elegant' ? 'text-center border-y border-slate-200 py-4' : 'border-l-4 border-emerald-500 bg-emerald-50/50'} p-4 rounded-r-xl grid grid-cols-2 gap-4">
                         <div>
                             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Billed To:</div><h3 class="text-lg font-bold text-slate-800">${inv.client.name}</h3><div class="text-[12px] text-slate-600 mt-1">${inv.client.mobile ? `<div>📞 ${inv.client.mobile}</div>` : ''}${inv.client.gstin ? `<div class="font-bold text-slate-800">🏢 GSTIN: ${inv.client.gstin}</div>` : ''}${inv.client.address ? `<div class="mt-1">📍 ${inv.client.address}</div>` : ''}</div>
                         </div>
-                        ${(inv.poNo || inv.vehicleNo || inv.ewayBill) ? `<div class="text-right text-[11px] text-slate-600 space-y-1">${inv.poNo ? `<div><span class="font-bold">PO Ref:</span> ${inv.poNo}</div>` : ''}${inv.vehicleNo ? `<div><span class="font-bold">Vehicle No:</span> ${inv.vehicleNo}</div>` : ''}${inv.ewayBill ? `<div><span class="font-bold">E-Way Bill:</span> ${inv.ewayBill}</div>` : ''}</div>` : ''}
+                        ${(window.isFeatureEnabled('shipping') && (inv.poNo || inv.vehicleNo || inv.ewayBill)) ? `<div class="text-right text-[11px] text-slate-600 space-y-1">${inv.poNo ? `<div><span class="font-bold">PO Ref:</span> ${inv.poNo}</div>` : ''}${inv.vehicleNo ? `<div><span class="font-bold">Vehicle No:</span> ${inv.vehicleNo}</div>` : ''}${inv.ewayBill ? `<div><span class="font-bold">E-Way Bill:</span> ${inv.ewayBill}</div>` : ''}</div>` : ''}
                     </div>
-                    <table class="w-full text-left mb-6"><thead class="${tableHeadStyles}"><tr><th class="py-2 px-2 text-center w-12 rounded-tl-lg">#</th><th class="py-2 px-2">Description & HSN</th><th class="py-2 px-2 text-center w-16">Qty</th><th class="py-2 px-2 text-right w-24">Rate</th><th class="py-2 px-2 text-center w-16">GST</th><th class="py-2 px-2 text-right w-32 rounded-tr-lg">Amount</th></tr></thead><tbody class="text-slate-700">${itemsHtml}</tbody></table>
+                    <table class="w-full text-left mb-6"><thead class="${tableHeadStyles}"><tr><th class="py-2 px-2 text-center w-12 rounded-tl-lg">#</th><th class="py-2 px-2">Description</th>${thHsn}<th class="py-2 px-2 text-center w-16">Qty</th><th class="py-2 px-2 text-right w-24">Rate</th><th class="py-2 px-2 text-center w-16">GST</th><th class="py-2 px-2 text-right w-32 rounded-tr-lg">Amount</th></tr></thead><tbody class="text-slate-700">${itemsHtml}</tbody></table>
                     <div class="flex justify-end mb-8"><div class="w-72 space-y-2 text-[12px]"><div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500 font-medium">Subtotal:</span><span class="font-bold text-slate-800">${window.formatCurrency(inv.subtotal, curr)}</span></div>
                     <div class="flex justify-between text-slate-400 text-[11px]"><span class="">CGST / IGST</span><span class="">${window.formatCurrency(cgst, curr)}</span></div>
                     <div class="flex justify-between border-b border-slate-100 pb-2 text-slate-400 text-[11px]"><span class="">SGST</span><span class="">${window.formatCurrency(sgst, curr)}</span></div>
-                    ${inv.discount > 0 ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-emerald-600 font-medium"><span>Discount (${inv.discountType === 'percent' ? inv.discount+'%' : 'Flat'}):</span><span>- ${window.formatCurrency((inv.subtotal + inv.totalTax + (inv.tdsAmount||0) - inv.grandTotal), curr)}</span></div>` : ''}
-                    ${inv.tdsAmount > 0 ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-red-600 font-medium"><span>TDS Deducted:</span><span>- ${window.formatCurrency(inv.tdsAmount, curr)}</span></div>` : ''}
+                    ${inv.discount > 0 ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-emerald-600 font-medium"><span>Discount (${inv.discountType === 'percent' ? inv.discount+'%' : 'Flat'}):</span><span>- ${window.formatCurrency((Number(inv.subtotal) + Number(inv.totalTax) + Number(inv.tdsAmount||0) - Number(inv.grandTotal)), curr)}</span></div>` : ''}
+                    ${(window.isFeatureEnabled('tds') && inv.tdsAmount > 0) ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-red-600 font-medium"><span>TDS Deducted:</span><span>- ${window.formatCurrency(inv.tdsAmount, curr)}</span></div>` : ''}
                     <div class="flex justify-between items-end pt-2"><span class="text-lg font-bold text-slate-800">Net Payable:</span><span class="text-2xl font-black ${totalStyles}">${window.formatCurrency(inv.grandTotal, curr)}</span></div></div></div>
-                    ${inv.notes ? `<div class="mb-6 p-4 bg-slate-50 border border-slate-100 rounded-xl text-[12px]"><div class="font-bold text-slate-800 mb-1 flex items-center gap-2">Medical Notes / Special Instructions:</div><div class="text-slate-600 whitespace-pre-wrap leading-relaxed">${inv.notes}</div></div>` : ''}
+                    ${inv.notes ? `<div class="mb-6 p-4 bg-slate-50 border border-slate-100 rounded-xl text-[12px]"><div class="font-bold text-slate-800 mb-1 flex items-center gap-2">Notes / Special Instructions:</div><div class="text-slate-600 whitespace-pre-wrap leading-relaxed">${inv.notes}</div></div>` : ''}
                 </div>
                 <div class="mt-auto">
                     <div class="flex justify-between items-end pt-6 border-t border-slate-200">
