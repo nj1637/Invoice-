@@ -63,7 +63,7 @@
     </script>
 
     <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none transition-all"></div>
 
     <!-- 1. Splash Screen -->
     <div id="splash-screen" class="fixed inset-0 z-[200] flex flex-col items-center justify-center transition-opacity duration-500" style="background-color: #065f46;">
@@ -411,7 +411,7 @@
                         <button onclick="toggleProductModal(true)" class="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>
                     </div>
                     <div id="add-product-form" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 md:p-6 mb-6">
-                        <h3 class="font-bold mb-4">Add New Item</h3>
+                        <h3 class="font-bold mb-4" id="add-product-form-title">Add New Item</h3>
                         <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                             <div class="md:col-span-2"><label class="text-sm font-medium text-slate-700 block mb-1">Product Name</label><input type="text" id="new-prod-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             <div>
@@ -696,6 +696,34 @@
             signupLogoBase64: '', signupSigBase64: '', newExpenseReceiptBase64: '',
             draft: { id: '', docType: 'Tax Invoice', currency: 'INR', items: [], discount: 0, discountType: 'fixed', tds: 0, isRcm: false, poNo: '', vehicleNo: '', ewayBill: '', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', dueDate: '', client: { name: '', mobile: '', gstin: '', address: '' } }
         };
+
+        // --- FIXED: ADDED MISSING showToast FUNCTION HERE ---
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-600' : (type === 'warning' ? 'bg-amber-500' : 'bg-emerald-600');
+            const icon = type === 'error' ? 'alert-circle' : (type === 'warning' ? 'alert-triangle' : 'check-circle');
+
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white font-medium transform transition-all duration-300 translate-y-[-20px] opacity-0 ${bgColor}`;
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+            if (typeof lucide !== 'undefined') lucide.createIcons({ root: toast });
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+            });
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-20px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+        // ----------------------------------------------------
 
         const navItems = [
             { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' }, 
