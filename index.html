@@ -159,8 +159,17 @@
                 <!-- Dashboard View -->
                 <div id="view-dashboard" class="tab-content w-full">
                     <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-slate-800">Accounting Dashboard</h2>
-                        <p class="text-slate-500">Real-time overview of your financial performance.</p>
+                        <div class="flex justify-between items-end flex-wrap gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-800">Accounting Dashboard</h2>
+                                <p class="text-slate-500">Real-time overview of your financial performance.</p>
+                            </div>
+                            <select id="dash-date-filter" onchange="window.updateDashboard()" class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-medium outline-none focus:border-emerald-500 shadow-sm">
+                                <option value="all">All Time</option>
+                                <option value="this_month">This Month</option>
+                                <option value="last_month">Last Month</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
@@ -230,6 +239,43 @@
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col max-h-[400px]">
                             <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 shrink-0"><i data-lucide="trending-up" class="text-emerald-500 w-5 h-5"></i> Top Sellers</h3>
                             <div id="dash-top-sellers" class="space-y-2 overflow-y-auto pr-2 hide-scrollbar flex-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daybook / General Journal View (NEW) -->
+                <div id="view-daybook" class="tab-content w-full">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Daybook & General Journal</h2>
+                            <p class="text-slate-500">Track daily cash inflow and outflow transactions.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="date" id="daybook-date" onchange="window.renderDaybook()" class="px-4 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 shadow-sm bg-white">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                            <div class="text-xs font-bold text-emerald-600 uppercase mb-1">Total Inflow</div>
+                            <div class="text-2xl font-bold text-emerald-800" id="daybook-in">₹0</div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                            <div class="text-xs font-bold text-red-600 uppercase mb-1">Total Outflow</div>
+                            <div class="text-2xl font-bold text-red-800" id="daybook-out">₹0</div>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <div class="text-xs font-bold text-blue-600 uppercase mb-1">Net Daily Balance</div>
+                            <div class="text-2xl font-bold text-blue-800" id="daybook-net">₹0</div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm min-w-[800px]">
+                                <thead class="bg-slate-50 text-slate-600 border-b border-slate-100">
+                                    <tr><th class="p-4 font-medium">Date</th><th class="p-4 font-medium">Type</th><th class="p-4 font-medium">Ref / Name</th><th class="p-4 font-medium text-emerald-600 text-right">Inflow (+)</th><th class="p-4 font-medium text-red-600 text-right">Outflow (-)</th></tr>
+                                </thead>
+                                <tbody id="daybook-list"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -408,7 +454,10 @@
                             <p class="text-slate-500">Manage inventory, HSN codes, batches, and profitability.</p>
                             <div class="mt-4 relative max-w-md"><i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i><input type="text" id="inventory-search" placeholder="Search products..." oninput="window.renderInventory()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
                         </div>
-                        <button onclick="toggleProductModal(true)" class="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>
+                        <div class="flex gap-2 w-full md:w-auto flex-wrap">
+                            <button onclick="window.exportInventoryCSV()" class="flex-1 md:flex-none px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-slate-50 transition-all"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
+                            <button onclick="toggleProductModal(true)" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>
+                        </div>
                     </div>
                     <div id="add-product-form" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-4 md:p-6 mb-6">
                         <h3 class="font-bold mb-4" id="add-product-form-title">Add New Item</h3>
@@ -490,17 +539,33 @@
                             <p class="text-slate-500">Manage patient records, clinical notes, and generate Statement of Accounts.</p>
                             <div class="mt-4 relative max-w-md"><i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i><input type="text" id="clients-search" placeholder="Search patients..." oninput="window.renderClients()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
                         </div>
+                        <div class="flex gap-2 w-full md:w-auto flex-wrap">
+                            <button onclick="window.exportClientsCSV()" class="flex-1 md:flex-none px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-slate-50 transition-all"><i data-lucide="download" class="w-4 h-4"></i> Export CSV</button>
+                            <button onclick="window.toggleClientModal(true, true)" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="user-plus" class="w-4 h-4"></i> Add Client</button>
+                        </div>
                     </div>
                     <div id="edit-client-form" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-4 md:p-6 mb-6 shadow-sm">
-                        <h3 class="font-bold mb-4">Edit Patient Profile</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <h3 class="font-bold mb-4" id="edit-client-title">Edit Patient Profile</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
                             <div><label class="text-sm font-medium text-slate-700 block mb-1">Name</label><input type="text" id="edit-client-name" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             <div><label class="text-sm font-medium text-slate-700 block mb-1">Mobile</label><input type="text" id="edit-client-mobile" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             <div><label class="text-sm font-medium text-slate-700 block mb-1">GSTIN</label><input type="text" id="edit-client-gstin" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
                             <div><label class="text-sm font-medium text-slate-700 block mb-1">Address</label><input type="text" id="edit-client-address" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"></div>
-                            <div class="md:col-span-4"><label class="text-sm font-medium text-slate-700 block mb-1">Medical / Treatment Notes</label><textarea id="edit-client-notes" rows="2" placeholder="Ongoing treatments, allergies, preferences..." class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none resize-none"></textarea></div>
+                            <div class="md:col-span-4"><label class="text-sm font-medium text-slate-700 block mb-1">General Notes</label><textarea id="edit-client-notes" rows="2" placeholder="Allergies, preferences..." class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none resize-none"></textarea></div>
                         </div>
-                        <div class="flex gap-2 mt-4 justify-end">
+                        
+                        <!-- Client Journal Section (NEW) -->
+                        <div class="border-t border-slate-200 pt-4" id="client-journal-section">
+                            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="book" class="w-4 h-4 text-emerald-600"></i> Client Journal & Clinical Notes</h4>
+                            <div class="flex flex-col md:flex-row gap-2 mb-4">
+                                <input type="date" id="journal-date" class="px-3 py-2 rounded-lg border border-slate-200 outline-none text-sm w-full md:w-40">
+                                <input type="text" id="journal-entry" placeholder="Add a new dated journal entry..." class="flex-1 px-3 py-2 rounded-lg border border-slate-200 outline-none text-sm w-full">
+                                <button type="button" onclick="window.addClientJournalEntry()" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 transition-colors w-full md:w-auto">Add Entry</button>
+                            </div>
+                            <div id="client-journal-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                        </div>
+
+                        <div class="flex gap-2 mt-4 justify-end border-t border-slate-200 pt-4">
                             <button onclick="toggleClientModal(false)" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-medium">Cancel</button>
                             <button onclick="saveClientEdit()" class="px-6 py-2 bg-emerald-600 text-white rounded-xl font-medium">Save Changes</button>
                         </div>
@@ -697,7 +762,7 @@
             draft: { id: '', docType: 'Tax Invoice', currency: 'INR', items: [], discount: 0, discountType: 'fixed', tds: 0, isRcm: false, poNo: '', vehicleNo: '', ewayBill: '', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', dueDate: '', client: { name: '', mobile: '', gstin: '', address: '' } }
         };
 
-        // --- FIXED: ADDED MISSING showToast FUNCTION HERE ---
+        // FIXED: Toast Notifications
         window.showToast = function(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -712,21 +777,17 @@
             container.appendChild(toast);
             if (typeof lucide !== 'undefined') lucide.createIcons({ root: toast });
 
-            // Animate in
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-[-20px]', 'opacity-0');
-            });
-
-            // Remove after 3 seconds
+            requestAnimationFrame(() => { toast.classList.remove('translate-y-[-20px]', 'opacity-0'); });
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-[-20px]');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         };
-        // ----------------------------------------------------
 
+        // NEW: Navigation features
         const navItems = [
             { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' }, 
+            { id: 'daybook', icon: 'book-open', label: 'Daybook' }, // Feature: Daybook
             { id: 'invoice', icon: 'plus', label: 'Invoice' },
             { id: 'records', icon: 'file-text', label: 'Records' }, 
             { id: 'inventory', icon: 'box', label: 'Inventory' },
@@ -822,7 +883,7 @@
             reader.onload = (ev) => { window.AppState.newExpenseReceiptBase64 = ev.target.result; setHTML('exp-receipt-preview', `<img src="${ev.target.result}" class="w-full h-full object-cover">`); }; reader.readAsDataURL(file);
         }
 
-        // --- FIXED: ADDED MISSING handleImageUpload FUNCTION FOR SETTINGS ---
+        // FIXED: Image Upload in settings
         window.handleImageUpload = function(e, type) {
             const file = e.target.files[0]; 
             if(!file) return; 
@@ -893,11 +954,13 @@
                 }
                 if(window.AppState.activeTab === 'records') window.renderRecords();
                 if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
+                if(window.AppState.activeTab === 'daybook' && window.renderDaybook) window.renderDaybook();
                 if(window.AppState.activeTab === 'clients') window.renderClients();
             });
             window.unsubExpenses = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'expenses'), (snap) => {
                 window.AppState.expenses = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.date) - new Date(a.date));
                 if(window.AppState.activeTab === 'expenses') window.renderExpenses();
+                if(window.AppState.activeTab === 'daybook' && window.renderDaybook) window.renderDaybook();
                 if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
             });
             window.unsubSettings = onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'config', 'settings'), (docSnap) => {
@@ -949,18 +1012,27 @@
             const desktopNav = document.getElementById('desktop-nav'); const mobileNav = document.getElementById('mobile-nav');
             if(!desktopNav || !mobileNav) return;
             desktopNav.innerHTML = ''; mobileNav.innerHTML = '';
+            
+            // Feature: Inventory Low Stock Notification in Nav
+            const lowStockCount = (window.AppState.products || []).filter(p => p.stock !== undefined && p.stock <= 10 && !p.isHidden).length;
+
             navItems.forEach(item => {
                 if(item.class === 'feat-expenses' && !window.isFeatureEnabled('expenses')) return;
 
                 const isActive = window.AppState.activeTab === item.id;
+                let badge = '';
+                if(item.id === 'inventory' && lowStockCount > 0) {
+                    badge = `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-auto">${lowStockCount}</span>`;
+                }
+
                 const dBtn = document.createElement('button');
                 dBtn.className = `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all w-full text-left ${isActive ? 'nav-desktop-active' : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'}`;
-                dBtn.innerHTML = `<i data-lucide="${item.icon}" class="w-5 h-5"></i> ${item.label}`;
+                dBtn.innerHTML = `<i data-lucide="${item.icon}" class="w-5 h-5"></i> ${item.label} ${badge}`;
                 dBtn.onclick = () => switchTab(item.id); desktopNav.appendChild(dBtn);
 
                 const mBtn = document.createElement('button');
-                mBtn.className = `flex flex-col items-center p-2 text-xs font-medium transition-colors w-full ${isActive ? 'nav-mobile-active' : 'text-slate-500'}`;
-                mBtn.innerHTML = `<i data-lucide="${item.icon}" class="w-6 h-6 mb-1 ${isActive ? 'fill-emerald-100' : ''}"></i> <span class="truncate w-full text-center">${item.label}</span>`;
+                mBtn.className = `flex flex-col items-center p-2 text-xs font-medium transition-colors w-full relative ${isActive ? 'nav-mobile-active' : 'text-slate-500'}`;
+                mBtn.innerHTML = `<i data-lucide="${item.icon}" class="w-6 h-6 mb-1 ${isActive ? 'fill-emerald-100' : ''}"></i> <span class="truncate w-full text-center">${item.label}</span> ${lowStockCount > 0 && item.id === 'inventory' ? `<div class="absolute top-1 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>` : ''}`;
                 mBtn.onclick = () => switchTab(item.id); mobileNav.appendChild(mBtn);
             });
             if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -975,6 +1047,7 @@
             renderNavigation(); window.applyFeatureVisibility();
             
             if(tabId === 'dashboard') window.updateDashboard();
+            if(tabId === 'daybook' && window.renderDaybook) window.renderDaybook();
             if(tabId === 'invoice') { window.restoreDraftToUI(); window.updateInvoiceUI(); }
             if(tabId === 'inventory' && window.renderInventory) window.renderInventory();
             if(tabId === 'expenses' && window.renderExpenses) window.renderExpenses();
@@ -986,8 +1059,27 @@
         }
 
         window.updateDashboard = function() {
-            const invoices = window.AppState.invoices || []; const finalized = invoices.filter(i => i.status === 'final' && i.docType !== 'Quotation' && i.docType !== 'Proforma Invoice');
-            const products = window.AppState.products || []; const expenses = window.AppState.expenses || [];
+            let invoices = window.AppState.invoices || []; 
+            let expenses = window.AppState.expenses || [];
+            const products = window.AppState.products || []; 
+            
+            // Feature: Dashboard Date Filtering
+            const filterEl = document.getElementById('dash-date-filter');
+            const filter = filterEl ? filterEl.value : 'all';
+            if (filter !== 'all') {
+                const now = new Date();
+                let filterMonth = now.getMonth();
+                let filterYear = now.getFullYear();
+                if (filter === 'last_month') {
+                    filterMonth -= 1;
+                    if (filterMonth < 0) { filterMonth = 11; filterYear -= 1; }
+                }
+                const filterPrefix = `${filterYear}-${String(filterMonth + 1).padStart(2, '0')}`;
+                invoices = invoices.filter(i => i.date && i.date.startsWith(filterPrefix));
+                expenses = expenses.filter(e => e.date && e.date.startsWith(filterPrefix));
+            }
+
+            const finalized = invoices.filter(i => i.status === 'final' && i.status !== 'void' && i.docType !== 'Quotation' && i.docType !== 'Proforma Invoice');
             
             const totalRev = finalized.reduce((sum, i) => sum + (Number(i.grandTotal) || 0), 0);
             const totalExp = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -1048,7 +1140,7 @@
             });
             setHTML('dash-aging', `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg"><span class="text-sm font-medium text-slate-600">0 - 30 Days</span><span class="font-bold text-slate-800">${formatINR(d0_30)}</span></div><div class="flex justify-between items-center bg-amber-50 p-3 rounded-lg"><span class="text-sm font-medium text-amber-700">31 - 60 Days</span><span class="font-bold text-amber-800">${formatINR(d31_60)}</span></div><div class="flex justify-between items-center bg-red-50 p-3 rounded-lg"><span class="text-sm font-medium text-red-700">60+ Days (Overdue)</span><span class="font-bold text-red-800">${formatINR(d60plus)}</span></div>`);
 
-            setHTML('dash-recent-activity', invoices.slice(0, 8).map(inv => `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl mb-2"><div class="truncate pr-2"><div class="font-medium text-slate-800 text-sm truncate">${inv.client.name || 'Unknown'}</div><div class="text-xs text-slate-400">${inv.id}</div></div><div class="text-right shrink-0"><div class="font-bold text-emerald-700 text-sm">${window.formatCurrency(inv.grandTotal, inv.currency)}</div><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${inv.status === 'final' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${inv.status}</span></div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No recent activity.</div>');
+            setHTML('dash-recent-activity', invoices.slice(0, 8).map(inv => `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl mb-2 ${inv.status==='void'?'opacity-50':''}"><div class="truncate pr-2"><div class="font-medium text-slate-800 text-sm truncate">${inv.client.name || 'Unknown'}</div><div class="text-xs text-slate-400">${inv.id}</div></div><div class="text-right shrink-0"><div class="font-bold text-emerald-700 text-sm ${inv.status==='void'?'line-through text-slate-400':''}">${window.formatCurrency(inv.grandTotal, inv.currency)}</div><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${inv.status === 'final' ? 'bg-emerald-100 text-emerald-700' : (inv.status === 'void' ? 'bg-slate-200 text-slate-600' : 'bg-amber-100 text-amber-700')}">${inv.status}</span></div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No recent activity.</div>');
 
             const lowStockItems = products.filter(p => p.stock !== undefined && p.stock <= 10 && !p.isHidden);
             setHTML('dash-low-stock', lowStockItems.map(p => `<div class="flex justify-between items-center p-3 bg-red-50 rounded-xl mb-2"><div class="text-sm font-medium text-red-800">${p.name}</div><div class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">Stock: ${p.stock}</div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">Stock levels look good!</div>');
@@ -1057,6 +1149,46 @@
             const topSellers = Object.entries(salesMap).sort((a,b) => b[1] - a[1]).slice(0, 10);
             setHTML('dash-top-sellers', topSellers.map(ts => `<div class="flex justify-between items-center p-3 bg-emerald-50 rounded-xl mb-2"><div class="text-sm font-medium text-emerald-800">${ts[0]}</div><div class="text-xs font-bold text-emerald-700">${ts[1]} sold</div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No sales data yet.</div>');
         }
+
+        // --- FEATURE: Daybook / General Journal ---
+        window.renderDaybook = function() {
+            const dateEl = document.getElementById('daybook-date');
+            if(!dateEl) return;
+            if(!dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+            const filterDate = dateEl.value;
+
+            const invs = (window.AppState.invoices || []).filter(i => i.date === filterDate && i.status === 'final' && i.status !== 'void' && i.docType !== 'Quotation' && i.docType !== 'Proforma Invoice');
+            const exps = (window.AppState.expenses || []).filter(e => e.date === filterDate);
+
+            let inflow = 0; let outflow = 0;
+            let rows = [];
+
+            invs.forEach(i => {
+                inflow += Number(i.grandTotal);
+                rows.push({ date: i.date, type: i.docType || 'Invoice', name: i.client?.name || 'Unknown', in: i.grandTotal, out: 0, raw: i });
+            });
+            exps.forEach(e => {
+                outflow += Number(e.amount);
+                rows.push({ date: e.date, type: 'Expense', name: e.category + (e.desc ? ` - ${e.desc}` : ''), in: 0, out: e.amount, raw: e });
+            });
+
+            rows.sort((a,b) => new Date(b.raw.createdAt || 0) - new Date(a.raw.createdAt || 0));
+
+            setText('daybook-in', formatINR(inflow));
+            setText('daybook-out', formatINR(outflow));
+            setText('daybook-net', formatINR(inflow - outflow));
+
+            setHTML('daybook-list', rows.map(r => `
+                <tr class="border-b border-slate-50 bg-white hover:bg-slate-50">
+                    <td class="p-4 text-slate-600 text-sm whitespace-nowrap">${r.date}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500 uppercase">${r.type}</td>
+                    <td class="p-4 text-sm font-medium text-slate-800">${r.name}</td>
+                    <td class="p-4 text-right font-bold text-emerald-600">${r.in > 0 ? formatINR(r.in) : '-'}</td>
+                    <td class="p-4 text-right font-bold text-red-600">${r.out > 0 ? formatINR(r.out) : '-'}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="p-8 text-center text-slate-400">No journal entries found for this date.</td></tr>');
+        }
+
 
         // --- Expenses Module ---
         window.toggleExpenseModal = function(show) {
@@ -1218,7 +1350,7 @@
                 await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', invoiceDoc.id), invoiceDoc);
                 const existingClient = window.AppState.clients.find(c => c.name.toLowerCase() === name.toLowerCase());
                 if(existingClient) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', existingClient.id), clientData); } 
-                else { await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients'), { ...clientData, createdAt: serverTimestamp() }); }
+                else { await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients'), { ...clientData, journal: [], createdAt: serverTimestamp() }); }
 
                 if(status === 'final' && window.AppState.draft.docType !== 'Quotation' && window.AppState.draft.docType !== 'Proforma Invoice') {
                     for (const item of window.AppState.draft.items) {
@@ -1286,6 +1418,14 @@
             }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No products found.</div>');
         }
 
+        // Feature: Inventory CSV Export
+        window.exportInventoryCSV = function() {
+            const products = window.AppState.products; if(products.length === 0) return window.showToast("No products to export", "warning");
+            const headers = "Name,Category,HSN,Cost,Rate,GST,Stock,Batch,Expiry\n";
+            const rows = products.map(p => `"${p.name}","${p.category||''}","${p.hsn||''}",${p.cost||0},${p.rate},${p.gst||0},${p.stock||0},"${p.batch||''}","${p.expiry||''}"`).join("\n");
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `Inventory.csv`; link.click();
+        }
+
         // --- Records, FY Filter & Payment ---
         window.populateClientFilter = function() { 
             const select = document.getElementById('filter-client'); if(!select) return; const currentVal = select.value; 
@@ -1309,11 +1449,37 @@
             
             const filtered = window.AppState.invoices.filter(i => { return (i.id.toLowerCase().includes(query) || (i.client.name && i.client.name.toLowerCase().includes(query))) && (start === "" || i.date >= start) && (end === "" || i.date <= end) && (payStatus === "" || (i.paymentStatus || 'unpaid') === payStatus); });
             
-            const collectedTax = filtered.filter(i => i.status === 'final' && i.docType === 'Tax Invoice').reduce((sum, i) => sum + (Number(i.totalTax) || 0), 0);
+            const collectedTax = filtered.filter(i => i.status === 'final' && i.docType === 'Tax Invoice' && i.status !== 'void').reduce((sum, i) => sum + (Number(i.totalTax) || 0), 0);
             setText('records-tax-summary', formatINR(collectedTax));
 
-            setHTML('records-list', filtered.map(inv => `<tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white"><td class="p-4 font-mono text-emerald-700 text-sm">${inv.id}</td><td class="p-4 text-xs font-bold text-slate-500 uppercase">${inv.docType || 'Tax Invoice'}</td><td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td><td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td><td class="p-4 text-right font-bold ${inv.docType === 'Credit Note' ? 'text-red-600' : 'text-slate-800'}">${window.formatCurrency(inv.grandTotal, inv.currency)}</td><td class="p-4 text-center">${inv.status === 'draft' || inv.docType === 'Credit Note' ? `<span class="text-[10px] text-slate-400 font-bold uppercase">N/A</span>` : `<button onclick="window.togglePaymentStatus('${inv.id}', '${inv.paymentStatus || 'unpaid'}')" class="text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-colors ${inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-sm' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'}">${inv.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</button>`}</td><td class="p-4 text-center">${inv.status === 'draft' ? `<button onclick="window.resumeDraft('${inv.id}')" class="px-2 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>` : `<div class="flex items-center gap-1 justify-center"><button onclick="window.viewInvoice('${inv.id}')" class="px-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View PDF</button>${window.isFeatureEnabled('creditNote') ? `<button onclick="window.issueCreditNote('${inv.id}')" title="Issue Credit Note" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"></path></svg></button>`:''}</div>`}</td></tr>`).join('') || '<tr><td colspan="7" class="p-8 text-center text-slate-400">No records found matching filters.</td></tr>');
+            setHTML('records-list', filtered.map(inv => `<tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors bg-white ${inv.status==='void'?'opacity-50':''}"><td class="p-4 font-mono text-emerald-700 text-sm ${inv.status==='void'?'line-through':''}">${inv.id}</td><td class="p-4 text-xs font-bold text-slate-500 uppercase">${inv.docType || 'Tax Invoice'}</td><td class="p-4 text-slate-600 text-sm whitespace-nowrap">${inv.date}</td><td class="p-4 font-medium text-slate-800 text-sm truncate max-w-[150px]">${inv.client.name}</td><td class="p-4 text-right font-bold ${inv.docType === 'Credit Note' ? 'text-red-600' : 'text-slate-800'} ${inv.status==='void'?'line-through text-slate-400':''}">${window.formatCurrency(inv.grandTotal, inv.currency)}</td><td class="p-4 text-center">${inv.status === 'draft' || inv.docType === 'Credit Note' || inv.status === 'void' ? `<span class="text-[10px] text-slate-400 font-bold uppercase">${inv.status==='void'?'VOID':'N/A'}</span>` : `<button onclick="window.togglePaymentStatus('${inv.id}', '${inv.paymentStatus || 'unpaid'}')" class="text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-colors ${inv.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-sm' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'}">${inv.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</button>`}</td><td class="p-4 text-center">${inv.status === 'draft' ? `<button onclick="window.resumeDraft('${inv.id}')" class="px-2 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 rounded text-xs font-bold transition-colors">Resume</button>` : `<div class="flex items-center gap-1 justify-center"><button onclick="window.viewInvoice('${inv.id}')" class="px-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">View</button><button onclick="window.duplicateInvoice('${inv.id}')" title="Duplicate" class="p-1.5 text-slate-400 hover:text-blue-500"><i data-lucide="copy" class="w-4 h-4"></i></button><button onclick="window.shareWhatsApp('${inv.id}')" title="WhatsApp" class="p-1.5 text-slate-400 hover:text-green-500"><i data-lucide="message-circle" class="w-4 h-4"></i></button><button onclick="window.voidInvoice('${inv.id}')" title="Void" class="p-1.5 text-slate-400 hover:text-red-500"><i data-lucide="ban" class="w-4 h-4"></i></button>${window.isFeatureEnabled('creditNote') ? `<button onclick="window.issueCreditNote('${inv.id}')" title="Credit Note" class="p-1.5 text-slate-400 hover:text-purple-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"></path></svg></button>`:''}</div>`}</td></tr>`).join('') || '<tr><td colspan="7" class="p-8 text-center text-slate-400">No records found matching filters.</td></tr>');
             if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Feature: WhatsApp Sharing
+        window.shareWhatsApp = function(id) {
+            const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return;
+            const mobile = inv.client.mobile ? inv.client.mobile.replace(/\D/g, '') : '';
+            const text = `Hello ${inv.client.name},\n\nHere is your ${inv.docType || 'Invoice'} (${inv.id}) for amount ${window.formatCurrency(inv.grandTotal, inv.currency)}.\n\nThank you,\n${window.AppState.settings.businessName}`;
+            window.open(`https://wa.me/${mobile ? (mobile.length===10 ? '91'+mobile : mobile) : ''}?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        // Feature: Duplicate Invoice
+        window.duplicateInvoice = function(id) {
+            const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return;
+            const duplicate = JSON.parse(JSON.stringify(inv));
+            duplicate.id = window.getNextInvoiceId();
+            duplicate.status = 'draft';
+            duplicate.date = new Date().toISOString().split('T')[0];
+            window.AppState.draft = duplicate;
+            window.switchTab('invoice');
+            window.showToast("Invoice Duplicated as Draft");
+        }
+
+        // Feature: Void Invoice
+        window.voidInvoice = async function(id) {
+            if(!confirm("Are you sure you want to void this document? It will be excluded from all revenue calculations.")) return;
+            try { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', id), { status: 'void' }); window.showToast("Document Voided successfully."); } catch(e) { window.showToast("Error voiding document", "error"); }
         }
 
         // 100% Reliable Bulk PDF Fix
@@ -1361,31 +1527,93 @@
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `DevAyurveda_Sales.csv`; link.click();
         }
 
-        window.toggleClientModal = function(show) { const frm = document.getElementById('edit-client-form'); if(frm) frm.classList.toggle('hidden', !show); if(!show) window.AppState.editingClientId = null; }
+        // Feature: Client CSV Export
+        window.exportClientsCSV = function() {
+            const clients = window.AppState.clients; if(clients.length === 0) return window.showToast("No clients to export", "warning");
+            const headers = "Name,Mobile,GSTIN,Address,General Notes\n";
+            const rows = clients.map(c => `"${c.name||''}","${c.mobile||''}","${c.gstin||''}","${c.address||''}","${c.notes||''}"`).join("\n");
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `Clients.csv`; link.click();
+        }
+
+        // Feature: Standalone Client Form Logic
+        window.toggleClientModal = function(show, isNew = false) { 
+            const frm = document.getElementById('edit-client-form'); if(frm) frm.classList.toggle('hidden', !show); 
+            if(!show) window.AppState.editingClientId = null; 
+            
+            if(isNew) {
+                window.AppState.editingClientId = null;
+                setText('edit-client-title', 'Create New Client');
+                setVal('edit-client-name', ''); setVal('edit-client-mobile', ''); setVal('edit-client-gstin', ''); setVal('edit-client-address', ''); setVal('edit-client-notes', '');
+                document.getElementById('client-journal-section').style.display = 'none';
+            } else if (show) {
+                setText('edit-client-title', 'Edit Patient Profile');
+                document.getElementById('client-journal-section').style.display = 'block';
+                setVal('journal-date', new Date().toISOString().split('T')[0]);
+                setVal('journal-entry', '');
+            }
+        }
+        
         window.editClient = function(id) { 
             const c = window.AppState.clients.find(x => x.id === id); if(!c) return; window.AppState.editingClientId = id; 
             setVal('edit-client-name', c.name || ''); setVal('edit-client-mobile', c.mobile || ''); setVal('edit-client-gstin', c.gstin || ''); setVal('edit-client-address', c.address || ''); setVal('edit-client-notes', c.notes || ''); 
-            window.toggleClientModal(true); window.scrollTo(0,0); 
+            window.toggleClientModal(true, false); 
+            window.renderClientJournal(c.journal || []);
+            window.scrollTo(0,0); 
         }
+
+        // Feature: Medical/Client Journal Timeline
+        window.renderClientJournal = function(journalArr) {
+            const sorted = [...journalArr].sort((a,b) => new Date(b.date) - new Date(a.date));
+            setHTML('client-journal-list', sorted.map(j => `<div class="bg-white p-3 rounded-lg border border-slate-100 shadow-sm"><div class="text-xs font-bold text-emerald-600 mb-1">${j.date}</div><div class="text-sm text-slate-700">${j.text}</div></div>`).join('') || '<div class="text-xs text-slate-400 italic mt-2">No journal entries yet.</div>');
+        }
+
+        window.addClientJournalEntry = async function() {
+            if(!window.AppState.editingClientId) return;
+            const date = document.getElementById('journal-date').value;
+            const text = document.getElementById('journal-entry').value.trim();
+            if(!date || !text) return window.showToast("Date and entry text are required", "error");
+
+            const c = window.AppState.clients.find(x => x.id === window.AppState.editingClientId);
+            const journal = c.journal || [];
+            journal.push({ id: Date.now().toString(), date, text });
+
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', window.AppState.editingClientId), { journal });
+                setVal('journal-entry', '');
+                window.renderClientJournal(journal);
+                window.showToast("Journal Entry Added!");
+            } catch(e) { window.showToast("Failed to save entry.", "error"); }
+        }
+
         window.saveClientEdit = async function() {
-            if(!window.AppState.editingClientId) return; 
             const nameEl = document.getElementById('edit-client-name'); const name = nameEl ? nameEl.value.trim() : ''; 
             if(!name) return window.showToast("Name is required", "error");
             const clientData = { name, mobile: document.getElementById('edit-client-mobile') ? document.getElementById('edit-client-mobile').value : '', gstin: document.getElementById('edit-client-gstin') ? document.getElementById('edit-client-gstin').value : '', address: document.getElementById('edit-client-address') ? document.getElementById('edit-client-address').value : '', notes: document.getElementById('edit-client-notes') ? document.getElementById('edit-client-notes').value : '' };
-            try { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', window.AppState.editingClientId), clientData); window.toggleClientModal(false); window.showToast("Profile Updated"); } catch(e) { window.showToast("Failed to update client.", "error"); }
+            
+            try { 
+                if (window.AppState.editingClientId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients', window.AppState.editingClientId), clientData); 
+                    window.showToast("Profile Updated");
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'clients'), { ...clientData, journal: [], createdAt: serverTimestamp() });
+                    window.showToast("New Client Created");
+                }
+                window.toggleClientModal(false); 
+            } catch(e) { window.showToast("Failed to save client.", "error"); }
         }
+
         window.renderClients = function() {
             const searchEl = document.getElementById('clients-search'); const query = (searchEl ? searchEl.value : '').toLowerCase(); const invoices = window.AppState.invoices || [];
             const filteredClients = window.AppState.clients.filter(c => c.name.toLowerCase().includes(query) || (c.mobile && c.mobile.includes(query)));
             setHTML('clients-list', filteredClients.map(c => {
-                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final'); const clv = cInvoices.reduce((sum, i) => sum + Number(i.grandTotal), 0);
-                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between"><div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">${c.name.charAt(0)}</div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 truncate">${c.name}</h4><div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div></div><div class="text-right shrink-0"><div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div><div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div><div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div></div></div>${c.notes ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-3 border border-slate-100 line-clamp-2 italic"><strong>Notes:</strong> ${c.notes}</div>` : ''}<div class="flex gap-2"><button onclick="window.editClient('${c.id}')" class="flex-1 text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider">Edit</button>${window.isFeatureEnabled('ledger') ? `<button onclick="window.generateClientLedger('${c.name}')" class="flex-1 text-[10px] px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 font-bold uppercase tracking-wider">Ledger PDF</button>`:''}</div></div>`
+                const cInvoices = invoices.filter(i => i.client.name === c.name && i.status === 'final' && i.status !== 'void'); const clv = cInvoices.reduce((sum, i) => sum + Number(i.grandTotal), 0);
+                return `<div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between"><div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg uppercase shrink-0">${c.name.charAt(0)}</div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 truncate">${c.name}</h4><div class="text-xs text-slate-500 mt-1 truncate">📞 ${c.mobile || 'No Mobile'}</div></div><div class="text-right shrink-0"><div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Lifetime</div><div class="font-bold text-emerald-600 text-sm">${formatINR(clv)}</div><div class="text-[10px] text-slate-400 mt-0.5">${cInvoices.length} orders</div></div></div>${c.notes ? `<div class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-3 border border-slate-100 line-clamp-2 italic"><strong>Notes:</strong> ${c.notes}</div>` : ''}<div class="flex gap-2"><button onclick="window.editClient('${c.id}')" class="flex-1 text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 font-bold uppercase tracking-wider">Edit Profile</button>${window.isFeatureEnabled('ledger') ? `<button onclick="window.generateClientLedger('${c.name}')" class="flex-1 text-[10px] px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 font-bold uppercase tracking-wider">Ledger PDF</button>`:''}</div></div>`
             }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No clients found.</div>');
         }
 
         // Feature 17: Client Ledger PDF Generation
         window.generateClientLedger = function(clientName) {
-            const clientInvs = window.AppState.invoices.filter(i => i.client.name === clientName && i.status === 'final').sort((a,b) => new Date(a.date) - new Date(b.date));
+            const clientInvs = window.AppState.invoices.filter(i => i.client.name === clientName && i.status === 'final' && i.status !== 'void').sort((a,b) => new Date(a.date) - new Date(b.date));
             if(clientInvs.length === 0) return window.showToast("No finalized invoices for this client.", "warning");
             
             let runningBal = 0;
@@ -1503,8 +1731,9 @@
             const taxAmt = Number(inv.totalTax) || 0; const cgst = taxAmt / 2; const sgst = taxAmt / 2;
 
             return `
-            <div class="inv-id-tracker ${fontClass} relative w-full h-full flex flex-col justify-between bg-white" data-id="${inv.id}">
+            <div class="inv-id-tracker ${fontClass} relative w-full h-full flex flex-col justify-between bg-white ${inv.status==='void'?'opacity-50 grayscale':''}" data-id="${inv.id}">
                 ${headerStyles}
+                ${inv.status === 'void' ? `<div class="absolute inset-0 flex items-center justify-center pointer-events-none z-50"><div class="text-6xl font-black text-red-600 border-8 border-red-600 p-4 rounded-xl transform -rotate-12 opacity-50 tracking-widest">VOID</div></div>` : ''}
                 <div>
                     <div class="flex justify-between items-start mb-8 ${tpl === 'elegant' ? 'flex-col items-center text-center' : ''}">
                         <div class="${tpl === 'elegant' ? 'w-full' : 'max-w-[55%]'}">
