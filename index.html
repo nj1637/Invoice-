@@ -822,6 +822,20 @@
             reader.onload = (ev) => { window.AppState.newExpenseReceiptBase64 = ev.target.result; setHTML('exp-receipt-preview', `<img src="${ev.target.result}" class="w-full h-full object-cover">`); }; reader.readAsDataURL(file);
         }
 
+        // --- FIXED: ADDED MISSING handleImageUpload FUNCTION FOR SETTINGS ---
+        window.handleImageUpload = function(e, type) {
+            const file = e.target.files[0]; 
+            if(!file) return; 
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const base64Image = ev.target.result;
+                window.AppState.settings[type] = base64Image;
+                setHTML(`${type}-preview`, `<img src="${base64Image}" class="w-full h-full object-contain">`);
+                window.showToast("Image uploaded. Remember to click 'Save All Settings'.");
+            }; 
+            reader.readAsDataURL(file);
+        }
+
         window.handleSignup = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('signup-btn'); if(btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons();
