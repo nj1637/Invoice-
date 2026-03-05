@@ -11,6 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- SheetJS for Excel Import -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -46,11 +48,15 @@
         
         #pin-lock-screen.active { display: flex; backdrop-filter: blur(8px); }
         .splash-exit { opacity: 0; pointer-events: none; transition: opacity 0.5s ease-out; }
+
+        /* Custom styles for password eye icon */
+        .password-toggle { cursor: pointer; color: #94a3b8; transition: color 0.2s; }
+        .password-toggle:hover { color: #059669; }
     </style>
 </head>
 <body class="text-slate-900 font-sans overflow-hidden h-screen relative">
 
-    <!-- Global Crash Handler (Prevents silent blank white screens) -->
+    <!-- Global Crash Handler -->
     <div id="fatal-error" class="hidden fixed inset-0 z-[99999] bg-red-600 text-white p-8 flex-col items-center justify-center text-center">
         <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4"><svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>
         <h1 class="text-3xl font-bold mb-2">System Error Intercepted</h1>
@@ -94,8 +100,19 @@
 
                 <!-- Login Form -->
                 <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-                    <div><label class="text-sm font-medium text-slate-700 block mb-1">Email Address</label><input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 focus:bg-white outline-none transition-all"></div>
-                    <div><label class="text-sm font-medium text-slate-700 block mb-1">Password</label><input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 focus:bg-white outline-none transition-all"></div>
+                    <div>
+                        <label class="text-sm font-medium text-slate-700 block mb-1">Email Address</label>
+                        <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 focus:bg-white outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-slate-700 block mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="login-password" required class="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 focus:bg-white outline-none transition-all">
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 password-toggle" onclick="togglePasswordVisibility('login-password', this)">
+                                <i data-lucide="eye" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                    </div>
                     <button type="submit" class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all flex justify-center items-center gap-2 mt-2" id="login-btn">Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
                     <div class="text-center pt-4"><p class="text-sm text-slate-500">New to Dev Ayurveda? <button type="button" onclick="toggleAuthMode('signup')" class="text-emerald-600 font-bold hover:underline">Create an account</button></p></div>
                 </form>
@@ -103,8 +120,19 @@
                 <!-- Signup Form -->
                 <form id="signup-form" onsubmit="handleSignup(event)" class="space-y-4 hidden">
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2"><label class="text-sm font-medium text-slate-700 block mb-1">Email Address *</label><input type="email" id="signup-email" required class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none"></div>
-                        <div class="col-span-2"><label class="text-sm font-medium text-slate-700 block mb-1">Password *</label><input type="password" id="signup-password" required minlength="6" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none"></div>
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Email Address *</label>
+                            <input type="email" id="signup-email" required class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-slate-700 block mb-1">Password *</label>
+                            <div class="relative">
+                                <input type="password" id="signup-password" required minlength="6" class="w-full px-4 py-2 pr-12 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none">
+                                <div class="absolute right-4 top-1/2 -translate-y-1/2 password-toggle" onclick="togglePasswordVisibility('signup-password', this)">
+                                    <i data-lucide="eye" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-span-2 mt-2 pt-2 border-t border-slate-100"><label class="text-xs font-bold text-emerald-600 uppercase tracking-wider block mb-3">Business Details</label></div>
                         <div class="col-span-2"><label class="text-sm font-medium text-slate-700 block mb-1">Business Name *</label><input type="text" id="signup-biz-name" required class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none"></div>
                         <div><label class="text-sm font-medium text-slate-700 block mb-1">Owner Name</label><input type="text" id="signup-owner" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none"></div>
@@ -131,7 +159,16 @@
                 <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="lock" class="w-8 h-8"></i></div>
                 <h2 class="text-2xl font-bold text-slate-800 mb-1">App Locked</h2>
                 <p class="text-slate-500 mb-6 text-sm">Enter your 4-digit PIN to access the ERP.</p>
-                <div class="flex justify-center mb-6"><input type="password" id="pin-input" maxlength="4" placeholder="••••" class="w-32 text-center text-3xl tracking-[0.5em] px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none transition-all"></div>
+                
+                <div class="flex justify-center mb-6">
+                    <div class="relative inline-flex items-center">
+                        <input type="password" id="secure-pin-field" maxlength="4" placeholder="••••" autocomplete="one-time-code" class="w-40 text-center text-3xl tracking-[0.5em] pl-8 pr-12 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 bg-slate-50 outline-none transition-all">
+                        <div class="absolute right-4 password-toggle" onclick="togglePasswordVisibility('secure-pin-field', this)">
+                            <i data-lucide="eye" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                </div>
+                
                 <button onclick="verifyPin()" class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all text-lg">Unlock App</button>
                 <p id="pin-error" class="text-red-500 text-sm mt-3 hidden font-medium">Incorrect PIN. Try again.</p>
             </div>
@@ -243,7 +280,7 @@
                     </div>
                 </div>
 
-                <!-- Daybook / General Journal View (NEW) -->
+                <!-- Daybook / General Journal View -->
                 <div id="view-daybook" class="tab-content w-full">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
                         <div>
@@ -350,9 +387,7 @@
                                     </div>
                                     <div id="product-suggestions" class="hidden absolute z-20 w-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 max-h-48 overflow-y-auto"></div>
                                 </div>
-                                <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100" id="invoice-items-wrapper">
-                                    <!-- Rendered dynamically via JS to apply feature toggles cleanly -->
-                                </div>
+                                <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100" id="invoice-items-wrapper"></div>
                             </div>
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
                                 <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><i data-lucide="file-edit" class="w-5 h-5"></i> Notes & Terms</h3>
@@ -455,7 +490,10 @@
                             <div class="mt-4 relative max-w-md"><i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i><input type="text" id="inventory-search" placeholder="Search products..." oninput="window.renderInventory()" class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"></div>
                         </div>
                         <div class="flex gap-2 w-full md:w-auto flex-wrap">
-                            <button onclick="window.exportInventoryCSV()" class="flex-1 md:flex-none px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-slate-50 transition-all"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
+                            <!-- Feature: Hidden File Input for Excel Import -->
+                            <input type="file" id="excel-import-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="window.handleExcelImport(event)">
+                            <button onclick="document.getElementById('excel-import-input').click()" class="flex-1 md:flex-none px-4 py-2 bg-white text-emerald-700 border border-emerald-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-50 transition-all"><i data-lucide="upload" class="w-4 h-4"></i> Import Excel</button>
+                            <button onclick="window.exportInventoryCSV()" class="flex-1 md:flex-none px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-slate-50 transition-all"><i data-lucide="download" class="w-4 h-4"></i> Export CSV</button>
                             <button onclick="toggleProductModal(true)" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium flex justify-center items-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all"><i data-lucide="plus" class="w-4 h-4"></i> Add Product</button>
                         </div>
                     </div>
@@ -554,7 +592,7 @@
                             <div class="md:col-span-4"><label class="text-sm font-medium text-slate-700 block mb-1">General Notes</label><textarea id="edit-client-notes" rows="2" placeholder="Allergies, preferences..." class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none resize-none"></textarea></div>
                         </div>
                         
-                        <!-- Client Journal Section (NEW) -->
+                        <!-- Client Journal Section -->
                         <div class="border-t border-slate-200 pt-4" id="client-journal-section">
                             <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="book" class="w-4 h-4 text-emerald-600"></i> Client Journal & Clinical Notes</h4>
                             <div class="flex flex-col md:flex-row gap-2 mb-4">
@@ -614,8 +652,24 @@
                                     <label for="set-pin-enable" class="text-sm font-bold text-slate-700">Enable 4-Digit Web Lock (PIN on Startup)</label>
                                 </div>
                                 <div id="pin-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4">
-                                    <div><label class="text-sm font-medium text-slate-700 block mb-1">Current PIN <span class="text-xs text-slate-400 font-normal">(Leave blank if new)</span></label><input type="password" id="set-pin-current" maxlength="4" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg"></div>
-                                    <div><label class="text-sm font-medium text-slate-700 block mb-1">New 4-Digit PIN</label><input type="password" id="set-pin-new" maxlength="4" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg"></div>
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700 block mb-1">Current PIN <span class="text-xs text-slate-400 font-normal">(Leave blank if new)</span></label>
+                                        <div class="relative">
+                                            <input type="password" id="set-pin-current" maxlength="4" class="w-full pl-4 pr-12 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg">
+                                            <div class="absolute right-4 top-1/2 -translate-y-1/2 password-toggle" onclick="togglePasswordVisibility('set-pin-current', this)">
+                                                <i data-lucide="eye" class="w-5 h-5"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-slate-700 block mb-1">New 4-Digit PIN</label>
+                                        <div class="relative">
+                                            <input type="password" id="set-pin-new" maxlength="4" class="w-full pl-4 pr-12 py-2 rounded-xl border border-slate-200 outline-none tracking-widest text-center text-lg">
+                                            <div class="absolute right-4 top-1/2 -translate-y-1/2 password-toggle" onclick="togglePasswordVisibility('set-pin-new', this)">
+                                                <i data-lucide="eye" class="w-5 h-5"></i>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex-1">
@@ -720,7 +774,7 @@
         </div>
     </div>
     
-    <!-- FIX: 100% Reliable Invisible Area for Bulk PDF -->
+    <!-- 100% Reliable Invisible Area for Bulk PDF -->
     <div id="bulk-render-container" class="absolute top-[-9999px] left-[-9999px] w-[210mm] bg-white pointer-events-none">
         <div id="bulk-render-area" class="w-full bg-white text-slate-900"></div>
     </div>
@@ -735,7 +789,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const defaultAppId = 'dev-ayurveda-pro-auth';
         const appId = typeof __app_id !== 'undefined' ? __app_id : defaultAppId;
@@ -754,15 +808,99 @@
         const currencyMap = { 'INR': '₹', 'USD': '$', 'EUR': '€', 'GBP': '£' };
         const defaultFeatures = { expenses: true, multiDoc: true, currency: true, shipping: true, tds: true, rcm: true, hsn: true, dueDate: true, ledger: true, creditNote: true, margin: true, batch: true };
 
-        window.AppState = {
-            user: null, activeTab: 'dashboard', products: [], clients: [], invoices: [], expenses: [], revenueChartInst: null, paymentPieChartInst: null,
-            settings: { businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', seal: '', bankName: '', bankAcc: '', bankIfsc: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '', lockDate: '', features: defaultFeatures },
-            editingProductId: null, editingClientId: null, editingExpenseId: null,
-            signupLogoBase64: '', signupSigBase64: '', newExpenseReceiptBase64: '',
-            draft: { id: '', docType: 'Tax Invoice', currency: 'INR', items: [], discount: 0, discountType: 'fixed', tds: 0, isRcm: false, poNo: '', vehicleNo: '', ewayBill: '', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', dueDate: '', client: { name: '', mobile: '', gstin: '', address: '' } }
+        // Centralized State Factory to prevent cross-account leaking
+        function getInitialState() {
+            return {
+                user: null, activeTab: 'dashboard', products: [], clients: [], invoices: [], expenses: [], revenueChartInst: null, paymentPieChartInst: null,
+                settings: { businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', seal: '', bankName: '', bankAcc: '', bankIfsc: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '', lockDate: '', features: {...defaultFeatures} },
+                editingProductId: null, editingClientId: null, editingExpenseId: null,
+                signupLogoBase64: '', signupSigBase64: '', newExpenseReceiptBase64: '',
+                draft: { id: '', docType: 'Tax Invoice', currency: 'INR', items: [], discount: 0, discountType: 'fixed', tds: 0, isRcm: false, poNo: '', vehicleNo: '', ewayBill: '', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', dueDate: '', client: { name: '', mobile: '', gstin: '', address: '' } }
+            };
+        }
+
+        window.AppState = getInitialState();
+
+        // Used to aggressively clear firestore listeners so they don't persist on logout
+        function clearFirestoreListeners() {
+            if (window.unsubProducts) { window.unsubProducts(); window.unsubProducts = null; }
+            if (window.unsubClients) { window.unsubClients(); window.unsubClients = null; }
+            if (window.unsubInvoices) { window.unsubInvoices(); window.unsubInvoices = null; }
+            if (window.unsubExpenses) { window.unsubExpenses(); window.unsubExpenses = null; }
+            if (window.unsubSettings) { window.unsubSettings(); window.unsubSettings = null; }
+        }
+
+        // Eye Icon Toggle Function
+        window.togglePasswordVisibility = function(inputId, trigger) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                trigger.innerHTML = '<i data-lucide="eye-off" class="w-5 h-5"></i>';
+            } else {
+                input.type = 'password';
+                trigger.innerHTML = '<i data-lucide="eye" class="w-5 h-5"></i>';
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         };
 
-        // FIXED: Toast Notifications
+        // Excel Import Function
+        window.handleExcelImport = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const data = evt.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (jsonData.length === 0) return window.showToast("Excel sheet is empty.", "warning");
+
+                    const batch = writeBatch(db);
+                    const uid = window.AppState.user.uid;
+                    let count = 0;
+
+                    jsonData.forEach((row) => {
+                        // Intelligent mapping
+                        const name = row.Name || row.Product || row.Item || row['Product Name'];
+                        if (!name) return;
+
+                        const rate = Number(row.Rate || row.Price || row['Selling Price'] || 0);
+                        const cost = Number(row.Cost || row['Cost Price'] || row['Purchase Price'] || 0);
+                        const gst = Number(row.GST || row.Tax || 0);
+                        const stock = Number(row.Stock || row.Quantity || row.Qty || 0);
+                        const hsn = String(row.HSN || row.SAC || '');
+                        const category = row.Category || 'Medicine';
+                        const batchNo = String(row.Batch || row['Batch No'] || '');
+                        const expiry = String(row.Expiry || row['Expiry Date'] || '');
+
+                        const newProdRef = doc(collection(db, 'artifacts', appId, 'users', uid, 'products'));
+                        batch.set(newProdRef, {
+                            name, category, hsn, cost, rate, gst, stock, batch: batchNo, expiry,
+                            isHidden: false, createdAt: serverTimestamp()
+                        });
+                        count++;
+                    });
+
+                    if (count > 0) {
+                        await batch.commit();
+                        window.showToast(`Imported ${count} products successfully!`);
+                    } else {
+                        window.showToast("No valid product names found in Excel.", "warning");
+                    }
+                    e.target.value = ''; // Reset input
+                } catch (err) {
+                    window.showToast("Failed to parse Excel file.", "error");
+                    console.error(err);
+                }
+            };
+            reader.readAsBinaryString(file);
+        };
+
         window.showToast = function(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -771,7 +909,7 @@
             const bgColor = type === 'error' ? 'bg-red-600' : (type === 'warning' ? 'bg-amber-500' : 'bg-emerald-600');
             const icon = type === 'error' ? 'alert-circle' : (type === 'warning' ? 'alert-triangle' : 'check-circle');
 
-            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white font-medium transform transition-all duration-300 translate-y-[-20px] opacity-0 ${bgColor}`;
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white font-medium transform transition-all duration-300 translate-y-[-20px] opacity-0 ${bgColor} pointer-events-auto`;
             toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i><span>${message}</span>`;
 
             container.appendChild(toast);
@@ -784,10 +922,9 @@
             }, 3000);
         };
 
-        // NEW: Navigation features
         const navItems = [
             { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' }, 
-            { id: 'daybook', icon: 'book-open', label: 'Daybook' }, // Feature: Daybook
+            { id: 'daybook', icon: 'book-open', label: 'Daybook' },
             { id: 'invoice', icon: 'plus', label: 'Invoice' },
             { id: 'records', icon: 'file-text', label: 'Records' }, 
             { id: 'inventory', icon: 'box', label: 'Inventory' },
@@ -835,9 +972,14 @@
                     renderNavigation();
                     switchTab(window.AppState.activeTab);
                 } else {
-                    window.AppState.user = null;
+                    // Critical Fix: Hard reset state and CLEAR listeners on logout to prevent any data/image leaking
+                    clearFirestoreListeners();
+                    window.AppState = getInitialState();
                     const authC = document.getElementById('auth-container'); if(authC) authC.style.display = 'block';
                     const appC = document.getElementById('app-container'); if(appC) appC.style.display = 'none';
+                    setHTML('signup-logo-preview', '<i data-lucide="image" class="text-slate-400 w-5 h-5"></i>');
+                    setHTML('signup-sig-preview', '<i data-lucide="pen-tool" class="text-slate-400 w-4 h-4"></i>');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
                 }
             });
         }
@@ -865,8 +1007,16 @@
         window.handleLogin = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('login-btn'); if(btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons();
-            try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value); } 
-            catch (error) { window.showToast("Login failed: " + error.message, "error"); }
+            try { 
+                await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value); 
+            } catch (error) { 
+                // Platform/Domain Warning
+                let msg = error.message;
+                if(error.code === 'auth/unauthorized-domain') {
+                    msg = "Domain not authorized! You must add this URL to your Firebase Console > Authentication > Settings > Authorized Domains.";
+                }
+                window.showToast("Login failed: " + msg, "error"); 
+            }
             finally { if(btn) btn.innerHTML = 'Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
         }
 
@@ -883,7 +1033,6 @@
             reader.onload = (ev) => { window.AppState.newExpenseReceiptBase64 = ev.target.result; setHTML('exp-receipt-preview', `<img src="${ev.target.result}" class="w-full h-full object-cover">`); }; reader.readAsDataURL(file);
         }
 
-        // FIXED: Image Upload in settings
         window.handleImageUpload = function(e, type) {
             const file = e.target.files[0]; 
             if(!file) return; 
@@ -902,18 +1051,33 @@
             const btn = document.getElementById('signup-btn'); if(btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons();
             try {
                 const cred = await createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-password').value);
+                // Explicitly define all fields so old state cannot leak
                 await setDoc(doc(db, 'artifacts', appId, 'users', cred.user.uid, 'config', 'settings'), {
-                    businessName: document.getElementById('signup-biz-name').value, owner: document.getElementById('signup-owner').value, phone: document.getElementById('signup-phone').value, gstin: document.getElementById('signup-gstin').value, address: document.getElementById('signup-address').value,
-                    logo: window.AppState.signupLogoBase64, signature: window.AppState.signupSigBase64, template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: '', features: defaultFeatures
+                    businessName: document.getElementById('signup-biz-name').value || '', 
+                    owner: document.getElementById('signup-owner').value || '', 
+                    phone: document.getElementById('signup-phone').value || '', 
+                    gstin: document.getElementById('signup-gstin').value || '', 
+                    address: document.getElementById('signup-address').value || '',
+                    logo: window.AppState.signupLogoBase64 || '', 
+                    signature: window.AppState.signupSigBase64 || '', 
+                    seal: '', bankName: '', bankAcc: '', bankIfsc: '',
+                    template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: '', features: {...defaultFeatures}
                 });
                 window.showToast("Account Created Successfully!");
-            } catch (error) { window.showToast("Signup failed: " + error.message, "error"); }
+            } catch (error) { 
+                let msg = error.message;
+                if(error.code === 'auth/unauthorized-domain') {
+                    msg = "Domain not authorized! Add this domain to Firebase Console > Authentication > Settings > Authorized Domains.";
+                }
+                window.showToast("Signup failed: " + msg, "error"); 
+            }
             finally { if(btn) btn.innerHTML = 'Create Account <i data-lucide="user-plus" class="w-4 h-4"></i>'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
         }
 
         window.handleLogout = async function() {
             try {
                 sessionStorage.removeItem('ayur_unlocked');
+                clearFirestoreListeners(); // Make doubly sure listeners are stopped before auth switches state
                 await signOut(auth);
                 window.showToast("Signed out successfully.");
             } catch(e) { window.showToast("Error signing out", "error"); }
@@ -933,19 +1097,22 @@
 
         function setupFirestoreListeners() {
             const uid = window.AppState.user.uid;
-            if(window.unsubProducts) window.unsubProducts(); if(window.unsubClients) window.unsubClients();
-            if(window.unsubInvoices) window.unsubInvoices(); if(window.unsubSettings) window.unsubSettings();
-            if(window.unsubExpenses) window.unsubExpenses();
+            
+            // Clear any lingering listeners from a previous session before starting new ones
+            clearFirestoreListeners();
 
+            // Added error handlers to each onSnapshot to catch permission issues silently rather than crashing
             window.unsubProducts = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'products'), (snap) => { 
                 window.AppState.products = snap.docs.map(d => ({id: d.id, ...d.data()})); 
                 if(window.AppState.activeTab === 'inventory' && window.renderInventory) window.renderInventory();
                 if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
-            });
+            }, (err) => console.error("Products Listener Error:", err));
+
             window.unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'clients'), (snap) => { 
                 window.AppState.clients = snap.docs.map(d => ({id: d.id, ...d.data()})); 
                 if(window.AppState.activeTab === 'clients') window.renderClients();
-            });
+            }, (err) => console.error("Clients Listener Error:", err));
+
             window.unsubInvoices = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'invoices'), (snap) => { 
                 window.AppState.invoices = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt); 
                 if(!window.AppState.draft.id || window.AppState.draft.id.startsWith('INV-')) {
@@ -956,13 +1123,15 @@
                 if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
                 if(window.AppState.activeTab === 'daybook' && window.renderDaybook) window.renderDaybook();
                 if(window.AppState.activeTab === 'clients') window.renderClients();
-            });
+            }, (err) => console.error("Invoices Listener Error:", err));
+
             window.unsubExpenses = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'expenses'), (snap) => {
                 window.AppState.expenses = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.date) - new Date(a.date));
                 if(window.AppState.activeTab === 'expenses') window.renderExpenses();
                 if(window.AppState.activeTab === 'daybook' && window.renderDaybook) window.renderDaybook();
                 if(window.AppState.activeTab === 'dashboard') window.updateDashboard();
-            });
+            }, (err) => console.error("Expenses Listener Error:", err));
+
             window.unsubSettings = onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'config', 'settings'), (docSnap) => {
                 if (docSnap.exists()) { 
                     window.AppState.settings = { ...window.AppState.settings, ...docSnap.data() }; 
@@ -975,11 +1144,11 @@
                     window.applyFeatureVisibility();
                     renderNavigation();
                 }
-            });
+            }, (err) => console.error("Settings Listener Error:", err));
         }
 
         window.verifyPin = function() {
-            const entered = document.getElementById('pin-input') ? document.getElementById('pin-input').value : '';
+            const entered = document.getElementById('secure-pin-field') ? document.getElementById('secure-pin-field').value : '';
             if (entered === window.AppState.settings.pin) {
                 sessionStorage.setItem('ayur_unlocked', 'true');
                 const lockScreen = document.getElementById('pin-lock-screen');
@@ -987,7 +1156,7 @@
                 const errEl = document.getElementById('pin-error'); if(errEl) errEl.classList.add('hidden');
             } else { 
                 const errEl = document.getElementById('pin-error'); if(errEl) errEl.classList.remove('hidden'); 
-                setVal('pin-input', ''); 
+                setVal('secure-pin-field', ''); 
             }
         }
         window.togglePinFields = function(checked) { const el = document.getElementById('pin-fields'); if(el) el.classList.toggle('hidden', !checked); }
@@ -1013,7 +1182,6 @@
             if(!desktopNav || !mobileNav) return;
             desktopNav.innerHTML = ''; mobileNav.innerHTML = '';
             
-            // Feature: Inventory Low Stock Notification in Nav
             const lowStockCount = (window.AppState.products || []).filter(p => p.stock !== undefined && p.stock <= 10 && !p.isHidden).length;
 
             navItems.forEach(item => {
@@ -1063,7 +1231,6 @@
             let expenses = window.AppState.expenses || [];
             const products = window.AppState.products || []; 
             
-            // Feature: Dashboard Date Filtering
             const filterEl = document.getElementById('dash-date-filter');
             const filter = filterEl ? filterEl.value : 'all';
             if (filter !== 'all') {
@@ -1150,7 +1317,6 @@
             setHTML('dash-top-sellers', topSellers.map(ts => `<div class="flex justify-between items-center p-3 bg-emerald-50 rounded-xl mb-2"><div class="text-sm font-medium text-emerald-800">${ts[0]}</div><div class="text-xs font-bold text-emerald-700">${ts[1]} sold</div></div>`).join('') || '<div class="text-sm text-slate-400 p-4 text-center">No sales data yet.</div>');
         }
 
-        // --- FEATURE: Daybook / General Journal ---
         window.renderDaybook = function() {
             const dateEl = document.getElementById('daybook-date');
             if(!dateEl) return;
@@ -1189,8 +1355,6 @@
             `).join('') || '<tr><td colspan="5" class="p-8 text-center text-slate-400">No journal entries found for this date.</td></tr>');
         }
 
-
-        // --- Expenses Module ---
         window.toggleExpenseModal = function(show) {
             const frm = document.getElementById('add-expense-form'); if(frm) frm.classList.toggle('hidden', !show);
             if(!show) {
@@ -1236,7 +1400,6 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // --- Invoice Engine ---
         window.handleClientSearch = function(val) {
             const suggDiv = document.getElementById('client-suggestions'); if(!suggDiv) return;
             if(!val) { suggDiv.classList.add('hidden'); return; }
@@ -1366,7 +1529,6 @@
             } catch (err) { window.showToast("Error saving document.", "error"); }
         }
 
-        // --- Inventory ---
         window.toggleProductModal = function(show) { 
             const frm = document.getElementById('add-product-form'); if(frm) frm.classList.toggle('hidden', !show); 
             if(!show) { 
@@ -1406,6 +1568,7 @@
             } catch(e) { window.showToast("Failed to save product", "error"); }
         }
         window.toggleHideProduct = async function(id, current) { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'products', id), { isHidden: !current }); }
+        
         window.renderInventory = function() {
             const searchEl = document.getElementById('inventory-search');
             const query = (searchEl ? searchEl.value : '').toLowerCase(); 
@@ -1418,7 +1581,6 @@
             }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No products found.</div>');
         }
 
-        // Feature: Inventory CSV Export
         window.exportInventoryCSV = function() {
             const products = window.AppState.products; if(products.length === 0) return window.showToast("No products to export", "warning");
             const headers = "Name,Category,HSN,Cost,Rate,GST,Stock,Batch,Expiry\n";
@@ -1426,7 +1588,6 @@
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `Inventory.csv`; link.click();
         }
 
-        // --- Records, FY Filter & Payment ---
         window.populateClientFilter = function() { 
             const select = document.getElementById('filter-client'); if(!select) return; const currentVal = select.value; 
             select.innerHTML = '<option value="">All Clients</option>' + window.AppState.clients.map(c => `<option value="${c.name}">${c.name}</option>`).join(''); select.value = currentVal; 
@@ -1456,7 +1617,6 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // Feature: WhatsApp Sharing
         window.shareWhatsApp = function(id) {
             const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return;
             const mobile = inv.client.mobile ? inv.client.mobile.replace(/\D/g, '') : '';
@@ -1464,7 +1624,6 @@
             window.open(`https://wa.me/${mobile ? (mobile.length===10 ? '91'+mobile : mobile) : ''}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // Feature: Duplicate Invoice
         window.duplicateInvoice = function(id) {
             const inv = window.AppState.invoices.find(i => i.id === id); if(!inv) return;
             const duplicate = JSON.parse(JSON.stringify(inv));
@@ -1476,13 +1635,11 @@
             window.showToast("Invoice Duplicated as Draft");
         }
 
-        // Feature: Void Invoice
         window.voidInvoice = async function(id) {
             if(!confirm("Are you sure you want to void this document? It will be excluded from all revenue calculations.")) return;
             try { await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'invoices', id), { status: 'void' }); window.showToast("Document Voided successfully."); } catch(e) { window.showToast("Error voiding document", "error"); }
         }
 
-        // 100% Reliable Bulk PDF Fix
         window.bulkExportPDF = async function() {
             const searchEl = document.getElementById('filter-search'); const query = searchEl ? searchEl.value.toLowerCase() : ''; 
             const startEl = document.getElementById('filter-start'); const start = startEl ? startEl.value : ''; 
@@ -1499,12 +1656,10 @@
             const bulkArea = document.getElementById('bulk-render-area'); 
             
             if(renderContainer && bulkArea) {
-                // Critical Fix for Bulk Blank Pages: Must be visible but positioned completely off-screen
                 renderContainer.style.visibility = 'visible'; bulkArea.innerHTML = '';
                 
                 filtered.forEach(inv => { const wrapper = document.createElement('div'); wrapper.innerHTML = window.generateInvoiceHTML(inv); wrapper.style.pageBreakAfter = 'always'; wrapper.className = 'px-10 py-12'; bulkArea.appendChild(wrapper); });
                 
-                // Delay to allow DOM & QR codes to paint fully in the background
                 setTimeout(async () => {
                     try {
                         const originalScroll = window.scrollY; window.scrollTo(0,0);
@@ -1527,7 +1682,6 @@
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `DevAyurveda_Sales.csv`; link.click();
         }
 
-        // Feature: Client CSV Export
         window.exportClientsCSV = function() {
             const clients = window.AppState.clients; if(clients.length === 0) return window.showToast("No clients to export", "warning");
             const headers = "Name,Mobile,GSTIN,Address,General Notes\n";
@@ -1535,7 +1689,6 @@
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })); link.download = `Clients.csv`; link.click();
         }
 
-        // Feature: Standalone Client Form Logic
         window.toggleClientModal = function(show, isNew = false) { 
             const frm = document.getElementById('edit-client-form'); if(frm) frm.classList.toggle('hidden', !show); 
             if(!show) window.AppState.editingClientId = null; 
@@ -1561,7 +1714,6 @@
             window.scrollTo(0,0); 
         }
 
-        // Feature: Medical/Client Journal Timeline
         window.renderClientJournal = function(journalArr) {
             const sorted = [...journalArr].sort((a,b) => new Date(b.date) - new Date(a.date));
             setHTML('client-journal-list', sorted.map(j => `<div class="bg-white p-3 rounded-lg border border-slate-100 shadow-sm"><div class="text-xs font-bold text-emerald-600 mb-1">${j.date}</div><div class="text-sm text-slate-700">${j.text}</div></div>`).join('') || '<div class="text-xs text-slate-400 italic mt-2">No journal entries yet.</div>');
@@ -1611,7 +1763,6 @@
             }).join('') || '<div class="col-span-full p-8 text-center text-slate-400">No clients found.</div>');
         }
 
-        // Feature 17: Client Ledger PDF Generation
         window.generateClientLedger = function(clientName) {
             const clientInvs = window.AppState.invoices.filter(i => i.client.name === clientName && i.status === 'final' && i.status !== 'void').sort((a,b) => new Date(a.date) - new Date(b.date));
             if(clientInvs.length === 0) return window.showToast("No finalized invoices for this client.", "warning");
