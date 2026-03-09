@@ -661,6 +661,21 @@
                             </div>
                         </div>
 
+                        <!-- NEW FEATURE: Keyboard Shortcuts Configuration -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 col-span-1 md:col-span-2">
+                            <div class="flex justify-between items-center border-b pb-2 mb-2">
+                                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="keyboard" class="w-5 h-5 text-emerald-600"></i> Keyboard Shortcuts (Hotkeys)</h3>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" id="set-shortcuts-master" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" onchange="window.toggleMasterShortcuts(this.checked)">
+                                    <label for="set-shortcuts-master" class="text-sm font-bold text-slate-700">Enable Global Shortcuts</label>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4">Use <strong>Alt + Key</strong> to perform fast actions across the app. Toggle individual shortcuts below if they interfere with your browser.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm font-medium text-slate-700" id="shortcuts-toggles-container">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
                         <!-- Security & Advanced Configs -->
                         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 col-span-1 md:col-span-2 flex flex-col md:flex-row gap-6">
                             <div class="flex-1">
@@ -871,7 +886,54 @@
 
         const currencyMap = { 'INR': '₹', 'USD': '$', 'EUR': '€', 'GBP': '£' };
         // Feature Toggles Expansion
-        const defaultFeatures = { expenses: true, multiDoc: true, currency: true, shipping: true, tds: true, rcm: true, hsn: true, dueDate: true, ledger: true, creditNote: true, margin: true, batch: true, deleteBtn: false, stamp: true, returnStock: true };
+        const defaultFeatures = { expenses: true, multiDoc: true, currency: true, shipping: true, tds: true, rcm: true, hsn: true, dueDate: true, ledger: true, creditNote: true, margin: true, batch: true, deleteBtn: true, stamp: true, returnStock: true };
+
+        // --- KEYBOARD SHORTCUTS CONFIGURATION (Over 35 mappings) ---
+        const defaultShortcuts = {
+            // Navigation
+            navDash: { key: '1', alt: true, label: 'Go to Dashboard', enabled: true },
+            navDaybook: { key: '2', alt: true, label: 'Go to Daybook', enabled: true },
+            navInvoice: { key: '3', alt: true, label: 'Go to Invoice Tab', enabled: true },
+            navRecords: { key: '4', alt: true, label: 'Go to Records Tab', enabled: true },
+            navInventory: { key: '5', alt: true, label: 'Go to Inventory Tab', enabled: true },
+            navExpenses: { key: '6', alt: true, label: 'Go to Expenses Tab', enabled: true },
+            navClients: { key: '7', alt: true, label: 'Go to Clients Tab', enabled: true },
+            navSettings: { key: '8', alt: true, label: 'Go to Settings Tab', enabled: true },
+            // Modals & Popups
+            actionAddProd: { key: 'p', alt: true, label: 'Open Add Product Modal', enabled: true },
+            actionAddClient: { key: 'c', alt: true, label: 'Open Add Client Modal', enabled: true },
+            actionLogExp: { key: 'e', alt: true, label: 'Open Log Expense Modal', enabled: true },
+            actionTrash: { key: 't', alt: true, label: 'Open Recycle Bin', enabled: true },
+            actionReports: { key: 'r', alt: true, label: 'Open Financial Reports', enabled: true },
+            // Invoicing Core
+            actionSaveDraft: { key: 's', alt: true, label: 'Save Invoice Draft', enabled: true },
+            actionFinalize: { key: 'f', alt: true, label: 'Finalize Invoice', enabled: true },
+            payUpi: { key: 'q', alt: true, label: 'Set Invoice Payment: UPI/QR', enabled: true },
+            payCash: { key: 'w', alt: true, label: 'Set Invoice Payment: Cash', enabled: true },
+            payCredit: { key: 'x', alt: true, label: 'Set Invoice Payment: Credit', enabled: true },
+            focusProdAdd: { key: 'z', alt: true, label: 'Focus Product Search (Invoice)', enabled: true },
+            focusClientAdd: { key: 'n', alt: true, label: 'Focus Client Search (Invoice)', enabled: true },
+            focusDiscount: { key: 'd', alt: true, label: 'Focus Discount Input', enabled: true },
+            // Search Fields
+            focusSearchInv: { key: 'h', alt: true, label: 'Focus Inventory Search', enabled: true },
+            focusSearchRec: { key: 'j', alt: true, label: 'Focus Records Search', enabled: true },
+            focusSearchClient: { key: 'k', alt: true, label: 'Focus Clients Search', enabled: true },
+            // Bulk Actions & Exports
+            importExcel: { key: 'i', alt: true, label: 'Import Inventory (Excel)', enabled: true },
+            exportCsvInv: { key: 'o', alt: true, label: 'Export Inventory (CSV)', enabled: true },
+            exportCsvRec: { key: 'v', alt: true, label: 'Export Records (CSV)', enabled: true },
+            exportCsvClient: { key: 'u', alt: true, label: 'Export Clients (CSV)', enabled: true },
+            bulkPdf: { key: 'b', alt: true, label: 'Generate Bulk PDF', enabled: true },
+            filterFY: { key: 'y', alt: true, label: 'Records: Show Current FY', enabled: true },
+            // Quick Adds
+            addJournal: { key: 'g', alt: true, label: 'Add Client Journal Entry', enabled: true },
+            // Reporting Tab Switches
+            reportPnl: { key: '[', alt: true, label: 'Reports: Switch to P&L', enabled: true },
+            reportBs: { key: ']', alt: true, label: 'Reports: Switch to Balance Sheet', enabled: true },
+            reportTb: { key: '\\', alt: true, label: 'Reports: Switch to Trial Balance', enabled: true },
+            // Global
+            actionLogout: { key: 'l', alt: true, label: 'Sign Out / Logout', enabled: true }
+        };
 
         // Centralized State Factory to prevent cross-account leaking
         function getInitialState() {
@@ -882,7 +944,10 @@
                 invoices: [], deletedInvoices: [], 
                 expenses: [], deletedExpenses: [],
                 revenueChartInst: null, paymentPieChartInst: null,
-                settings: { businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', seal: '', bankName: '', bankAcc: '', bankIfsc: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '', lockDate: '', netProfitFormula: 'standard', features: {...defaultFeatures} },
+                settings: { 
+                    businessName: '', owner: '', gstin: '', address: '', phone: '', upi: '', logo: '', signature: '', seal: '', bankName: '', bankAcc: '', bankIfsc: '', template: 'modern', customTerms: '', logoDisplay: 'both', pinEnabled: false, pin: '', lockDate: '', netProfitFormula: 'standard', features: {...defaultFeatures},
+                    shortcutsEnabled: true, shortcutsConfig: {...defaultShortcuts}
+                },
                 editingProductId: null, editingClientId: null, editingExpenseId: null,
                 signupLogoBase64: '', signupSigBase64: '', newExpenseReceiptBase64: '',
                 draft: { id: '', docType: 'Tax Invoice', currency: 'INR', items: [], discount: 0, discountType: 'fixed', tds: 0, isRcm: false, poNo: '', vehicleNo: '', ewayBill: '', paymentMode: 'upi', paymentStatus: 'unpaid', notes: '', dueDate: '', client: { name: '', mobile: '', gstin: '', address: '' } }
@@ -899,6 +964,83 @@
             if (window.unsubExpenses) { window.unsubExpenses(); window.unsubExpenses = null; }
             if (window.unsubSettings) { window.unsubSettings(); window.unsubSettings = null; }
         }
+
+        // --- NEW GLOBAL KEYBOARD SHORTCUTS LISTENER ---
+        window.addEventListener('keydown', (e) => {
+            if (!window.AppState || !window.AppState.user) return; 
+            if (window.AppState.settings.shortcutsEnabled === false) return; 
+
+            const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+            if (isInput && !e.altKey && !e.ctrlKey) return; 
+
+            const scConfig = window.AppState.settings.shortcutsConfig || defaultShortcuts;
+
+            const matchId = Object.keys(scConfig).find(k => {
+                const conf = scConfig[k];
+                return conf.enabled && e.altKey === conf.alt && e.key.toLowerCase() === conf.key.toLowerCase();
+            });
+
+            if (matchId) {
+                e.preventDefault();
+                window.executeShortcut(matchId);
+            }
+        });
+
+        window.executeShortcut = function(actionId) {
+            // Ensure UI is clean before executing some actions
+            switch(actionId) {
+                case 'navDash': window.switchTab('dashboard'); break;
+                case 'navDaybook': window.switchTab('daybook'); break;
+                case 'navInvoice': window.switchTab('invoice'); break;
+                case 'navRecords': window.switchTab('records'); break;
+                case 'navInventory': window.switchTab('inventory'); break;
+                case 'navExpenses': window.switchTab('expenses'); break;
+                case 'navClients': window.switchTab('clients'); break;
+                case 'navSettings': window.switchTab('settings'); break;
+                
+                case 'actionAddProd': window.switchTab('inventory'); window.toggleProductModal(true); break;
+                case 'actionAddClient': window.switchTab('clients'); window.toggleClientModal(true, true); break;
+                case 'actionLogExp': window.switchTab('expenses'); window.toggleExpenseModal(true); break;
+                case 'actionTrash': window.openTrashModal(); break;
+                case 'actionReports': window.openFinancialReports(); break;
+                
+                case 'actionSaveDraft': if(window.AppState.activeTab === 'invoice') window.saveInvoice('draft'); else window.showToast('Go to Invoice tab first', 'warning'); break;
+                case 'actionFinalize': if(window.AppState.activeTab === 'invoice') window.saveInvoice('final'); else window.showToast('Go to Invoice tab first', 'warning'); break;
+                case 'payUpi': if(window.AppState.activeTab === 'invoice') window.setPaymentMode('upi'); break;
+                case 'payCash': if(window.AppState.activeTab === 'invoice') window.setPaymentMode('cash'); break;
+                case 'payCredit': if(window.AppState.activeTab === 'invoice') window.setPaymentMode('credit'); break;
+                case 'focusProdAdd': if(window.AppState.activeTab !== 'invoice') window.switchTab('invoice'); setTimeout(() => document.getElementById('inv-product-search')?.focus(), 100); break;
+                case 'focusClientAdd': if(window.AppState.activeTab !== 'invoice') window.switchTab('invoice'); setTimeout(() => document.getElementById('inv-client-name')?.focus(), 100); break;
+                case 'focusDiscount': if(window.AppState.activeTab !== 'invoice') window.switchTab('invoice'); setTimeout(() => document.getElementById('inv-discount')?.focus(), 100); break;
+                
+                case 'focusSearchInv': if(window.AppState.activeTab !== 'inventory') window.switchTab('inventory'); setTimeout(() => document.getElementById('inventory-search')?.focus(), 100); break;
+                case 'focusSearchRec': if(window.AppState.activeTab !== 'records') window.switchTab('records'); setTimeout(() => document.getElementById('filter-search')?.focus(), 100); break;
+                case 'focusSearchClient': if(window.AppState.activeTab !== 'clients') window.switchTab('clients'); setTimeout(() => document.getElementById('clients-search')?.focus(), 100); break;
+                
+                case 'importExcel': if(window.AppState.activeTab !== 'inventory') window.switchTab('inventory'); document.getElementById('excel-import-input')?.click(); break;
+                case 'exportCsvInv': window.exportInventoryCSV(); break;
+                case 'exportCsvRec': window.exportCSV(); break;
+                case 'exportCsvClient': window.exportClientsCSV(); break;
+                case 'bulkPdf': window.bulkExportPDF(); break;
+                case 'filterFY': if(window.AppState.activeTab !== 'records') window.switchTab('records'); window.setFinancialYear(); break;
+                
+                case 'addJournal': if(document.getElementById('edit-client-form')?.classList.contains('hidden') === false) window.addClientJournalEntry(); break;
+                case 'reportPnl': if(document.getElementById('reports-modal')?.style.display === 'flex') window.switchReportTab('pnl'); break;
+                case 'reportBs': if(document.getElementById('reports-modal')?.style.display === 'flex') window.switchReportTab('bs'); break;
+                case 'reportTb': if(document.getElementById('reports-modal')?.style.display === 'flex') window.switchReportTab('tb'); break;
+                
+                case 'actionLogout': window.handleLogout(); break;
+            }
+        };
+
+        window.toggleMasterShortcuts = function(checked) {
+            window.AppState.settings.shortcutsEnabled = checked;
+            const container = document.getElementById('shortcuts-toggles-container');
+            if(container) {
+                container.style.opacity = checked ? '1' : '0.4';
+                container.style.pointerEvents = checked ? 'auto' : 'none';
+            }
+        };
 
         // Eye Icon Toggle Function
         window.togglePasswordVisibility = function(inputId, trigger) {
@@ -978,7 +1120,7 @@
             const bgColor = type === 'error' ? 'bg-red-600' : (type === 'warning' ? 'bg-amber-500' : 'bg-emerald-600');
             const icon = type === 'error' ? 'alert-circle' : (type === 'warning' ? 'alert-triangle' : 'check-circle');
 
-            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white font-medium transform transition-all duration-300 translate-y-[-20px] opacity-0 ${bgColor} pointer-events-auto`;
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white font-medium transform transition-all duration-300 translate-y-[-20px] opacity-0 ${bgColor} pointer-events-auto z-[9999]`;
             toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i><span>${message}</span>`;
 
             container.appendChild(toast);
@@ -1127,7 +1269,8 @@
                     logo: window.AppState.signupLogoBase64 || '', 
                     signature: window.AppState.signupSigBase64 || '', 
                     seal: '', bankName: '', bankAcc: '', bankIfsc: '',
-                    template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: '', netProfitFormula: 'standard', features: {...defaultFeatures}
+                    template: 'modern', logoDisplay: 'both', pinEnabled: false, pin: '', customTerms: '', netProfitFormula: 'standard', features: {...defaultFeatures},
+                    shortcutsEnabled: true, shortcutsConfig: {...defaultShortcuts}
                 });
                 window.showToast("Account Created Successfully!");
             } catch (error) { 
@@ -1166,7 +1309,7 @@
             // Clear any lingering listeners from a previous session before starting new ones
             clearFirestoreListeners();
 
-            // Modifying listeners to split Data securely into Active vs Deleted (Feature 3)
+            // Modifying listeners to split Data securely into Active vs Deleted
             window.unsubProducts = onSnapshot(collection(db, 'artifacts', appId, 'users', uid, 'products'), (snap) => { 
                 const all = snap.docs.map(d => ({id: d.id, ...d.data()})); 
                 window.AppState.products = all.filter(p => !p.isDeleted);
@@ -2037,10 +2180,14 @@
 
             let html = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
             
+            // Added Permanent Delete Button logic to the existing restore logic
             const renderRow = (type, item, title, desc) => `
-                <div class="bg-white p-4 border border-slate-200 rounded-xl flex justify-between items-center shadow-sm">
-                    <div><div class="text-[10px] uppercase font-bold text-red-500 mb-1">${type}</div><div class="font-bold text-slate-800 text-sm">${title}</div><div class="text-xs text-slate-500">${desc}</div></div>
-                    <button onclick="window.restoreItem('${type}', '${item.id}')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs rounded-lg transition-colors">Restore</button>
+                <div class="bg-white p-4 border border-slate-200 rounded-xl flex flex-col justify-between shadow-sm hover:border-slate-300 transition-colors">
+                    <div class="mb-3"><div class="text-[10px] uppercase font-bold text-red-500 mb-1">${type}</div><div class="font-bold text-slate-800 text-sm">${title}</div><div class="text-xs text-slate-500">${desc}</div></div>
+                    <div class="flex gap-2 justify-end pt-2 border-t border-slate-50">
+                        <button onclick="window.restoreItem('${type}', '${item.id}')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs rounded-lg transition-colors border border-emerald-100 flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restore</button>
+                        <button onclick="window.permanentDeleteItem('${type}', '${item.id}')" class="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs rounded-lg transition-colors border border-red-100 flex items-center gap-1"><i data-lucide="trash-2" class="w-3 h-3"></i> Perm Delete</button>
+                    </div>
                 </div>`;
 
             delInvs.forEach(i => html += renderRow('Invoice', i, i.id, `Total: ${formatINR(i.grandTotal)} | Client: ${i.client.name}`));
@@ -2049,8 +2196,9 @@
             delExps.forEach(e => html += renderRow('Expense', e, e.category, `Amount: ${formatINR(e.amount)}`));
             
             html += `</div>`;
-            if(delProds.length===0 && delClients.length===0 && delInvs.length===0 && delExps.length===0) html = `<div class="text-center p-8 text-slate-400">Recycle bin is empty.</div>`;
+            if(delProds.length===0 && delClients.length===0 && delInvs.length===0 && delExps.length===0) html = `<div class="text-center p-8 text-slate-400 flex flex-col items-center"><i data-lucide="check-circle" class="w-12 h-12 text-slate-300 mb-3"></i>Recycle bin is empty.</div>`;
             setHTML('trash-render-area', html);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
         window.closeTrashModal = function() { const mod = document.getElementById('trash-modal'); if(mod) mod.style.display = 'none'; }
         
@@ -2064,8 +2212,28 @@
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, collectionName, id), { isDeleted: false });
                 window.showToast(`${type} restored successfully!`);
-                window.openTrashModal(); // Refresh modal
+                window.openTrashModal(); 
             } catch(e) { window.showToast(`Failed to restore ${type}`, "error"); }
+        }
+
+        // NEW PERMANENT DELETE FUNCTION
+        window.permanentDeleteItem = async function(type, id) {
+            if(!confirm(`WARNING: Are you sure you want to PERMANENTLY delete this ${type}? This action absolutely cannot be undone.`)) return;
+            
+            let collectionName = '';
+            if(type === 'Invoice') collectionName = 'invoices';
+            if(type === 'Product') collectionName = 'products';
+            if(type === 'Client') collectionName = 'clients';
+            if(type === 'Expense') collectionName = 'expenses';
+            
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, collectionName, id));
+                window.showToast(`${type} permanently deleted.`, 'success');
+                window.openTrashModal(); // Refresh modal
+            } catch(e) { 
+                window.showToast(`Failed to permanently delete ${type}`, "error"); 
+                console.error(e);
+            }
         }
 
         window.populateSettingsUI = function() {
@@ -2074,7 +2242,7 @@
             setVal('set-biz-phone', s.phone || ''); setVal('set-biz-upi', s.upi || ''); setVal('set-biz-terms', s.customTerms || ''); 
             setVal('set-biz-logo-display', s.logoDisplay || 'both'); setVal('set-lock-date', s.lockDate || ''); 
             setVal('set-bank-name', s.bankName || ''); setVal('set-bank-acc', s.bankAcc || ''); setVal('set-bank-ifsc', s.bankIfsc || '');
-            setVal('set-profit-formula', s.netProfitFormula || 'standard'); // Feature 5
+            setVal('set-profit-formula', s.netProfitFormula || 'standard'); 
             
             const pinEl = document.getElementById('set-pin-enable'); if(pinEl) { pinEl.checked = s.pinEnabled || false; window.togglePinFields(s.pinEnabled || false); }
             
@@ -2086,6 +2254,25 @@
             const f = s.features || defaultFeatures;
             const toggles = ['expenses', 'multiDoc', 'currency', 'shipping', 'tds', 'rcm', 'hsn', 'dueDate', 'ledger', 'creditNote', 'margin', 'batch', 'deleteBtn', 'stamp', 'returnStock'];
             toggles.forEach(t => { const el = document.getElementById(`feat-${t}`); if(el) el.checked = f[t] !== false; });
+
+            // Keyboard Shortcuts Population
+            const masterScEl = document.getElementById('set-shortcuts-master');
+            if(masterScEl) {
+                masterScEl.checked = s.shortcutsEnabled !== false;
+                window.toggleMasterShortcuts(masterScEl.checked);
+            }
+            
+            const scConfig = s.shortcutsConfig || defaultShortcuts;
+            const scContainer = document.getElementById('shortcuts-toggles-container');
+            if(scContainer) {
+                scContainer.innerHTML = Object.keys(scConfig).map(k => `
+                    <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-all">
+                        <input type="checkbox" id="sc-${k}" class="w-4 h-4 text-emerald-600 rounded sc-toggle-checkbox focus:ring-emerald-500" ${scConfig[k].enabled ? 'checked' : ''}>
+                        <span class="flex-1 truncate text-xs text-slate-700">${scConfig[k].label}</span>
+                        <kbd class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] font-mono border border-slate-200 shadow-sm shrink-0">Alt+${scConfig[k].key.toUpperCase()}</kbd>
+                    </label>
+                `).join('');
+            }
         }
 
         window.setTemplate = function(tpl) { 
@@ -2122,6 +2309,16 @@
                 if (wantPin && !s.pinEnabled) { if(newPinInp.length !== 4) return window.showToast("New PIN must be exactly 4 digits.", "error"); s.pinEnabled = true; s.pin = newPinInp; } 
                 else if (wantPin && s.pinEnabled && newPinInp.length === 4) { if(curPinInp !== s.pin) return window.showToast("Current PIN is incorrect.", "error"); s.pin = newPinInp; } 
                 else if (!wantPin) { s.pinEnabled = false; s.pin = ''; }
+
+                // Save Shortcut Configs
+                s.shortcutsEnabled = document.getElementById('set-shortcuts-master') ? document.getElementById('set-shortcuts-master').checked : true;
+                const currentScConfig = s.shortcutsConfig || defaultShortcuts;
+                Object.keys(currentScConfig).forEach(k => {
+                    const el = document.getElementById(`sc-${k}`);
+                    if(el) currentScConfig[k].enabled = el.checked;
+                });
+                s.shortcutsConfig = currentScConfig;
+
                 await setDoc(doc(db, 'artifacts', appId, 'users', window.AppState.user.uid, 'config', 'settings'), s); 
                 window.showToast("Settings saved securely!");
                 setVal('set-pin-current', ''); setVal('set-pin-new', '');
@@ -2152,71 +2349,73 @@
             const itemsHtml = inv.items.map((item, idx) => {
                 const tdHsn = window.isFeatureEnabled('hsn') ? `<td class="py-2 text-center align-top text-[11px]">${item.hsn || '-'}</td>` : '';
                 return `<tr class="border-b ${tpl === 'bold' ? 'border-black' : 'border-slate-200'}"><td class="py-2 text-center align-top">${idx + 1}</td><td class="py-2 align-top"><div class="font-bold text-slate-800">${item.name}</div>${(window.isFeatureEnabled('batch') && (item.batch || item.expiry)) ? `<div class="text-[10px] text-slate-500 mt-1 font-medium">Batch: ${item.batch||'-'} | Exp: ${item.expiry||'-'}</div>` : ''}</td>${tdHsn}<td class="py-2 text-center align-top font-medium">${item.qty}</td><td class="py-2 text-right align-top text-slate-600">${window.formatCurrency(item.rate, curr)}</td><td class="py-2 text-center align-top text-slate-600">${item.gst}%</td><td class="py-2 text-right font-bold align-top text-slate-800">${window.formatCurrency(item.qty * item.rate, curr)}</td></tr>`;
-            }).join('');
+}).join('');
 
-            let headerStyles = ''; let tableHeadStyles = ''; let totalStyles = ''; let fontClass = 'font-sans';
-            if(tpl === 'modern') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-emerald-600"></div>'; tableHeadStyles = 'bg-slate-800 text-white'; totalStyles = 'text-emerald-700'; }
-            if(tpl === 'classic') { tableHeadStyles = 'border-b-2 border-slate-800 text-slate-800'; totalStyles = 'text-slate-900'; }
-            if(tpl === 'minimal') { tableHeadStyles = 'border-b border-slate-300 text-slate-500 uppercase text-xs'; totalStyles = 'text-slate-800 font-light'; }
-            if(tpl === 'compact') { tableHeadStyles = 'bg-slate-100 text-slate-700 text-xs'; totalStyles = 'text-slate-900'; }
-            if(tpl === 'elegant') { fontClass = 'font-serif'; headerStyles = '<div class="w-full text-center border-b border-slate-300 pb-4 mb-8"></div>'; tableHeadStyles = 'border-b border-slate-400 text-slate-800 italic'; totalStyles = 'text-slate-800'; logoHtml = `<div class="flex flex-col items-center mx-auto">${s.logo ? `<img src="${s.logo}" class="h-20 object-contain max-w-[200px] mb-2">` : ''}<h1 class="text-4xl text-slate-900 tracking-widest">${s.businessName}</h1></div>`; }
-            if(tpl === 'bold') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-6 bg-black"></div>'; tableHeadStyles = 'bg-black text-white uppercase tracking-widest'; totalStyles = 'text-black'; }
-            if(tpl === 'nature') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-gradient-to-r from-green-500 to-emerald-700"></div>'; tableHeadStyles = 'bg-green-800 text-green-50'; totalStyles = 'text-green-800'; }
-            if(tpl === 'corporate') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-blue-900"></div>'; tableHeadStyles = 'bg-blue-900 text-white'; totalStyles = 'text-blue-900'; }
+        let headerStyles = ''; let tableHeadStyles = ''; let totalStyles = ''; let fontClass = 'font-sans';
+        if(tpl === 'modern') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-emerald-600"></div>'; tableHeadStyles = 'bg-slate-800 text-white'; totalStyles = 'text-emerald-700'; }
+        if(tpl === 'classic') { tableHeadStyles = 'border-b-2 border-slate-800 text-slate-800'; totalStyles = 'text-slate-900'; }
+        if(tpl === 'minimal') { tableHeadStyles = 'border-b border-slate-300 text-slate-500 uppercase text-xs'; totalStyles = 'text-slate-800 font-light'; }
+        if(tpl === 'compact') { tableHeadStyles = 'bg-slate-100 text-slate-700 text-xs'; totalStyles = 'text-slate-900'; }
+        if(tpl === 'elegant') { fontClass = 'font-serif'; headerStyles = '<div class="w-full text-center border-b border-slate-300 pb-4 mb-8"></div>'; tableHeadStyles = 'border-b border-slate-400 text-slate-800 italic'; totalStyles = 'text-slate-800'; logoHtml = `<div class="flex flex-col items-center mx-auto">${s.logo ? `<img src="${s.logo}" class="h-20 object-contain max-w-[200px] mb-2">` : ''}<h1 class="text-4xl text-slate-900 tracking-widest">${s.businessName}</h1></div>`; }
+        if(tpl === 'bold') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-6 bg-black"></div>'; tableHeadStyles = 'bg-black text-white uppercase tracking-widest'; totalStyles = 'text-black'; }
+        if(tpl === 'nature') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-gradient-to-r from-green-500 to-emerald-700"></div>'; tableHeadStyles = 'bg-green-800 text-green-50'; totalStyles = 'text-green-800'; }
+        if(tpl === 'corporate') { headerStyles = '<div class="absolute -top-12 -left-10 w-[210mm] h-4 bg-blue-900"></div>'; tableHeadStyles = 'bg-blue-900 text-white'; totalStyles = 'text-blue-900'; }
 
-            const taxAmt = Number(inv.totalTax) || 0; const cgst = taxAmt / 2; const sgst = taxAmt / 2;
+        const taxAmt = Number(inv.totalTax) || 0; const cgst = taxAmt / 2; const sgst = taxAmt / 2;
 
-            return `
-            <div class="inv-id-tracker ${fontClass} relative w-full h-full flex flex-col justify-between bg-white ${inv.status==='void'?'opacity-50 grayscale':''}" data-id="${inv.id}">
-                ${headerStyles}
-                ${inv.status === 'void' ? `<div class="absolute inset-0 flex items-center justify-center pointer-events-none z-50"><div class="text-6xl font-black text-red-600 border-8 border-red-600 p-4 rounded-xl transform -rotate-12 opacity-50 tracking-widest">VOID</div></div>` : ''}
-                <div>
-                    <div class="flex justify-between items-start mb-8 ${tpl === 'elegant' ? 'flex-col items-center text-center' : ''}">
-                        <div class="${tpl === 'elegant' ? 'w-full' : 'max-w-[55%]'}">
-                            ${logoHtml}
-                            <div class="mt-4 text-[12px] text-slate-500 leading-relaxed ${tpl === 'elegant' ? 'mx-auto' : ''}">
-                                ${s.address ? `<div>${s.address}</div>` : ''}${s.phone ? `<div class="mt-1">📞 ${s.phone}</div>` : ''}${s.gstin ? `<div class="font-bold mt-1 text-slate-700">GSTIN: ${s.gstin}</div>` : ''}
-                            </div>
-                        </div>
-                        <div class="${tpl === 'elegant' ? 'text-center mt-6 w-full border-t border-slate-200 pt-4 flex justify-between' : 'text-right'}">
-                            ${tpl !== 'elegant' ? `<h2 class="text-4xl font-light text-slate-300 uppercase tracking-widest mb-3 ${tpl==='bold' ? 'text-black font-black' : ''}">${inv.docType || 'Tax Invoice'}</h2>` : `<h2 class="text-2xl font-bold uppercase tracking-widest">${inv.docType || 'Tax Invoice'}</h2>`}
-                            <div><div class="font-bold text-slate-800 text-lg tracking-wide">${inv.id}</div><div class="text-slate-500 font-medium text-xs mt-1">Date: ${inv.date}</div>${(window.isFeatureEnabled('dueDate') && inv.dueDate) ? `<div class="text-red-500 font-bold mt-1 text-xs">Due: ${inv.dueDate}</div>` : ''}</div>
-                            ${(window.isFeatureEnabled('rcm') && inv.isRcm) ? `<div class="inline-block mt-2 px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold uppercase tracking-wider rounded">RCM Applied</div>` : ''}
+        return `
+        <div class="inv-id-tracker ${fontClass} relative w-full h-full flex flex-col justify-between bg-white ${inv.status==='void'?'opacity-50 grayscale':''}" data-id="${inv.id}">
+            ${headerStyles}
+            ${inv.status === 'void' ? `<div class="absolute inset-0 flex items-center justify-center pointer-events-none z-50"><div class="text-6xl font-black text-red-600 border-8 border-red-600 p-4 rounded-xl transform -rotate-12 opacity-50 tracking-widest">VOID</div></div>` : ''}
+            <div>
+                <div class="flex justify-between items-start mb-8 ${tpl === 'elegant' ? 'flex-col items-center text-center' : ''}">
+                    <div class="${tpl === 'elegant' ? 'w-full' : 'max-w-[55%]'}">
+                        ${logoHtml}
+                        <div class="mt-4 text-[12px] text-slate-500 leading-relaxed ${tpl === 'elegant' ? 'mx-auto' : ''}">
+                            ${s.address ? `<div>${s.address}</div>` : ''}${s.phone ? `<div class="mt-1">📞 ${s.phone}</div>` : ''}${s.gstin ? `<div class="font-bold mt-1 text-slate-700">GSTIN: ${s.gstin}</div>` : ''}
                         </div>
                     </div>
-                    <div class="mb-8 ${tpl === 'bold' ? 'border-l-8 border-black' : tpl === 'nature' ? 'border-l-4 border-green-600 bg-green-50' : tpl === 'corporate' ? 'border-l-4 border-blue-900 bg-slate-50' : tpl === 'elegant' ? 'text-center border-y border-slate-200 py-4' : 'border-l-4 border-emerald-500 bg-emerald-50/50'} p-4 rounded-r-xl grid grid-cols-2 gap-4">
-                        <div>
-                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Billed To:</div><h3 class="text-lg font-bold text-slate-800">${inv.client.name}</h3><div class="text-[12px] text-slate-600 mt-1">${inv.client.mobile ? `<div>📞 ${inv.client.mobile}</div>` : ''}${inv.client.gstin ? `<div class="font-bold text-slate-800">🏢 GSTIN: ${inv.client.gstin}</div>` : ''}${inv.client.address ? `<div class="mt-1">📍 ${inv.client.address}</div>` : ''}</div>
-                        </div>
-                        ${(window.isFeatureEnabled('shipping') && (inv.poNo || inv.vehicleNo || inv.ewayBill)) ? `<div class="text-right text-[11px] text-slate-600 space-y-1">${inv.poNo ? `<div><span class="font-bold">PO Ref:</span> ${inv.poNo}</div>` : ''}${inv.vehicleNo ? `<div><span class="font-bold">Vehicle No:</span> ${inv.vehicleNo}</div>` : ''}${inv.ewayBill ? `<div><span class="font-bold">E-Way Bill:</span> ${inv.ewayBill}</div>` : ''}</div>` : ''}
+                    <div class="${tpl === 'elegant' ? 'text-center mt-6 w-full border-t border-slate-200 pt-4 flex justify-between' : 'text-right'}">
+                        ${tpl !== 'elegant' ? `<h2 class="text-4xl font-light text-slate-300 uppercase tracking-widest mb-3 ${tpl==='bold' ? 'text-black font-black' : ''}">${inv.docType || 'Tax Invoice'}</h2>` : `<h2 class="text-2xl font-bold uppercase tracking-widest">${inv.docType || 'Tax Invoice'}</h2>`}
+                        <div><div class="font-bold text-slate-800 text-lg tracking-wide">${inv.id}</div><div class="text-slate-500 font-medium text-xs mt-1">Date: ${inv.date}</div>${(window.isFeatureEnabled('dueDate') && inv.dueDate) ? `<div class="text-red-500 font-bold mt-1 text-xs">Due: ${inv.dueDate}</div>` : ''}</div>
+                        ${(window.isFeatureEnabled('rcm') && inv.isRcm) ? `<div class="inline-block mt-2 px-2 py-0.5 bg-slate-800 text-white text-[9px] font-bold uppercase tracking-wider rounded">RCM Applied</div>` : ''}
                     </div>
-                    <table class="w-full text-left mb-6"><thead class="${tableHeadStyles}"><tr><th class="py-2 px-2 text-center w-12 rounded-tl-lg">#</th><th class="py-2 px-2">Description</th>${thHsn}<th class="py-2 px-2 text-center w-16">Qty</th><th class="py-2 px-2 text-right w-24">Rate</th><th class="py-2 px-2 text-center w-16">GST</th><th class="py-2 px-2 text-right w-32 rounded-tr-lg">Amount</th></tr></thead><tbody class="text-slate-700">${itemsHtml}</tbody></table>
-                    <div class="flex justify-end mb-8"><div class="w-72 space-y-2 text-[12px]"><div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500 font-medium">Subtotal:</span><span class="font-bold text-slate-800">${window.formatCurrency(inv.subtotal, curr)}</span></div>
-                    <div class="flex justify-between text-slate-400 text-[11px]"><span class="">CGST / IGST</span><span class="">${window.formatCurrency(cgst, curr)}</span></div>
-                    <div class="flex justify-between border-b border-slate-100 pb-2 text-slate-400 text-[11px]"><span class="">SGST</span><span class="">${window.formatCurrency(sgst, curr)}</span></div>
-                    ${inv.discount > 0 ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-emerald-600 font-medium"><span>Discount (${inv.discountType === 'percent' ? inv.discount+'%' : 'Flat'}):</span><span>- ${window.formatCurrency((Number(inv.subtotal) + Number(inv.totalTax) + Number(inv.tdsAmount||0) - Number(inv.grandTotal)), curr)}</span></div>` : ''}
-                    ${(window.isFeatureEnabled('tds') && inv.tdsAmount > 0) ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-red-600 font-medium"><span>TDS Deducted:</span><span>- ${window.formatCurrency(inv.tdsAmount, curr)}</span></div>` : ''}
-                    <div class="flex justify-between items-end pt-2"><span class="text-lg font-bold text-slate-800">Net Payable:</span><span class="text-2xl font-black ${totalStyles}">${window.formatCurrency(inv.grandTotal, curr)}</span></div></div></div>
-                    ${inv.notes ? `<div class="mb-6 p-4 bg-slate-50 border border-slate-100 rounded-xl text-[12px]"><div class="font-bold text-slate-800 mb-1 flex items-center gap-2">Notes / Special Instructions:</div><div class="text-slate-600 whitespace-pre-wrap leading-relaxed">${inv.notes}</div></div>` : ''}
                 </div>
-                <div class="mt-auto">
-                    <div class="flex justify-between items-end pt-6 border-t border-slate-200">
-                        <div class="flex gap-4">
-                            ${(s.bankName && s.bankAcc) ? `<div class="text-[10px] text-slate-600 mr-4"><div class="font-bold text-slate-800 mb-1 uppercase tracking-wider">Bank Details</div><div>Bank: ${s.bankName}</div><div>A/C: ${s.bankAcc}</div><div>IFSC: ${s.bankIfsc}</div></div>` : ''}
-                            ${paymentQR ? `<div class="text-center">${paymentQR}<div class="text-[9px] font-bold text-emerald-700 mt-1 uppercase tracking-widest">Scan to Pay</div></div>` : ''}
-                            ${inv.paymentMode === 'credit' ? `<div class="text-center bg-amber-50 px-3 py-1 rounded border border-amber-200"><div class="text-[9px] font-bold text-amber-700 uppercase tracking-widest">Credit Sale</div></div>` : ''}
-                        </div>
-                        <div class="text-center relative">
-                            ${sealHtml}
-                            ${sigHtml}
-                            <div class="text-[12px] font-bold text-slate-800 relative z-10">Authorized Signatory</div>
-                            <div class="text-[10px] text-slate-500 font-medium tracking-wide relative z-10">${s.businessName}</div>
-                        </div>
+                <div class="mb-8 ${tpl === 'bold' ? 'border-l-8 border-black' : tpl === 'nature' ? 'border-l-4 border-green-600 bg-green-50' : tpl === 'corporate' ? 'border-l-4 border-blue-900 bg-slate-50' : tpl === 'elegant' ? 'text-center border-y border-slate-200 py-4' : 'border-l-4 border-emerald-500 bg-emerald-50/50'} p-4 rounded-r-xl grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Billed To:</div><h3 class="text-lg font-bold text-slate-800">${inv.client.name}</h3><div class="text-[12px] text-slate-600 mt-1">${inv.client.mobile ? `<div>📞 ${inv.client.mobile}</div>` : ''}${inv.client.gstin ? `<div class="font-bold text-slate-800">🏢 GSTIN: ${inv.client.gstin}</div>` : ''}${inv.client.address ? `<div class="mt-1">📍 ${inv.client.address}</div>` : ''}</div>
                     </div>
-                    <div class="text-center mt-6 text-[11px] font-medium text-slate-400 italic whitespace-pre-wrap px-8 leading-relaxed">${s.customTerms ? s.customTerms : `Thank you for your trust and business! For any queries regarding this document, please contact us at ${s.phone || 'our registered numbers'}.`}</div>
+                    ${(window.isFeatureEnabled('shipping') && (inv.poNo || inv.vehicleNo || inv.ewayBill)) ? `<div class="text-right text-[11px] text-slate-600 space-y-1">${inv.poNo ? `<div><span class="font-bold">PO Ref:</span> ${inv.poNo}</div>` : ''}${inv.vehicleNo ? `<div><span class="font-bold">Vehicle No:</span> ${inv.vehicleNo}</div>` : ''}${inv.ewayBill ? `<div><span class="font-bold">E-Way Bill:</span> ${inv.ewayBill}</div>` : ''}</div>` : ''}
                 </div>
-            </div>`;
-        }
-    </script>
+                <table class="w-full text-left mb-6"><thead class="${tableHeadStyles}"><tr><th class="py-2 px-2 text-center w-12 rounded-tl-lg">#</th><th class="py-2 px-2">Description</th>${thHsn}<th class="py-2 px-2 text-center w-16">Qty</th><th class="py-2 px-2 text-right w-24">Rate</th><th class="py-2 px-2 text-center w-16">GST</th><th class="py-2 px-2 text-right w-32 rounded-tr-lg">Amount</th></tr></thead><tbody class="text-slate-700">${itemsHtml}</tbody></table>
+                <div class="flex justify-end mb-8"><div class="w-72 space-y-2 text-[12px]"><div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500 font-medium">Subtotal:</span><span class="font-bold text-slate-800">${window.formatCurrency(inv.subtotal, curr)}</span></div>
+                <div class="flex justify-between text-slate-400 text-[11px]"><span class="">CGST / IGST</span><span class="">${window.formatCurrency(cgst, curr)}</span></div>
+                <div class="flex justify-between border-b border-slate-100 pb-2 text-slate-400 text-[11px]"><span class="">SGST</span><span class="">${window.formatCurrency(sgst, curr)}</span></div>
+                ${inv.discount > 0 ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-emerald-600 font-medium"><span>Discount (${inv.discountType === 'percent' ? inv.discount+'%' : 'Flat'}):</span><span>- ${window.formatCurrency((Number(inv.subtotal) + Number(inv.totalTax) + Number(inv.tdsAmount||0) - Number(inv.grandTotal)), curr)}</span></div>` : ''}
+                ${(window.isFeatureEnabled('tds') && inv.tdsAmount > 0) ? `<div class="flex justify-between border-b border-slate-100 pb-2 text-red-600 font-medium"><span>TDS Deducted:</span><span>- ${window.formatCurrency(inv.tdsAmount, curr)}</span></div>` : ''}
+                <div class="flex justify-between items-end pt-2"><span class="text-lg font-bold text-slate-800">Net Payable:</span><span class="text-2xl font-black ${totalStyles}">${window.formatCurrency(inv.grandTotal, curr)}</span></div></div></div>
+                ${inv.notes ? `<div class="mb-6 p-4 bg-slate-50 border border-slate-100 rounded-xl text-[12px]"><div class="font-bold text-slate-800 mb-1 flex items-center gap-2">Notes / Special Instructions:</div><div class="text-slate-600 whitespace-pre-wrap leading-relaxed">${inv.notes}</div></div>` : ''}
+            </div>
+            <div class="mt-auto">
+                <div class="flex justify-between items-end pt-6 border-t border-slate-200">
+                    <div class="flex gap-4">
+                        ${(s.bankName && s.bankAcc) ? `<div class="text-[10px] text-slate-600 mr-4"><div class="font-bold text-slate-800 mb-1 uppercase tracking-wider">Bank Details</div><div>Bank: ${s.bankName}</div><div>A/C: ${s.bankAcc}</div><div>IFSC: ${s.bankIfsc}</div></div>` : ''}
+                        ${paymentQR ? `<div class="text-center">${paymentQR}<div class="text-[9px] font-bold text-emerald-700 mt-1 uppercase tracking-widest">Scan to Pay</div></div>` : ''}
+                        ${inv.paymentMode === 'credit' ? `<div class="text-center bg-amber-50 px-3 py-1 rounded border border-amber-200"><div class="text-[9px] font-bold text-amber-700 uppercase tracking-widest">Credit Sale</div></div>` : ''}
+                    </div>
+                    <div class="text-center relative">
+                        ${sealHtml}
+                        ${sigHtml}
+                        <div class="text-[12px] font-bold text-slate-800 relative z-10">Authorized Signatory</div>
+                        <div class="text-[10px] text-slate-500 font-medium tracking-wide relative z-10">${s.businessName}</div>
+                    </div>
+                </div>
+                <div class="text-center mt-6 text-[11px] font-medium text-slate-400 italic whitespace-pre-wrap px-8 leading-relaxed">${s.customTerms ? s.customTerms : `Thank you for your trust and business! For any queries regarding this document, please contact us at ${s.phone || 'our registered numbers'}.`}</div>
+            </div>
+        </div>`;
+    }
+</script>
+
+
 </body>
 </html>
