@@ -307,8 +307,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f5;color:#0f172a
           <button type="submit" id="login-btn" class="btn btn-primary w-full justify-center py-2.5">
             <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
           </button>
+          <div class="text-center mt-2">
+            <button type="button" onclick="showForgotPassword()" class="text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors">
+              <i data-lucide="key" class="w-3.5 h-3.5 inline mr-1"></i>Forgot Password?
+            </button>
+          </div>
         </form>
-        <p class="text-center text-slate-400 text-sm mt-5">New? <button onclick="showSignup()" class="text-emerald-400 font-semibold">Create account</button></p>
+        <p class="text-center text-slate-400 text-sm mt-4">New? <button onclick="showSignup()" class="text-emerald-400 font-semibold">Create account</button></p>
         <!-- Signup -->
         <form id="signup-form" onsubmit="handleSignup(event)" class="space-y-3 hidden mt-1">
           <div><label class="lbl text-slate-300">Business Name</label>
@@ -363,6 +368,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f5;color:#0f172a
       </div>
       <button onclick="verifyPin()" class="btn btn-primary w-full justify-center">Unlock</button>
       <p id="pin-error" class="text-red-500 text-sm mt-3 hidden">Incorrect PIN</p>
+      <button type="button" onclick="showForgotPinModal()" class="text-slate-400 text-xs mt-3 hover:text-red-500 transition-colors w-full text-center">
+        <i data-lucide="help-circle" class="w-3.5 h-3.5 inline mr-1"></i>Forgot PIN? Unlock via Email
+      </button>
     </div>
   </div>
 
@@ -764,7 +772,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f5;color:#0f172a
 
     <!-- Active Modules -->
     <div class="acc-card" onclick="toggleAcc('acc-modules',this)">
-      <div class="acc-head"><div class="acc-icon bg-emerald-50"><i data-lucide="layout-grid" class="w-5 h-5 text-emerald-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Active Modules</div><div class="text-xs text-slate-400 mt-0.5">ERP functional units</div></div><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
+      <div class="acc-head"><div class="acc-icon bg-emerald-50"><i data-lucide="layout-grid" class="w-5 h-5 text-emerald-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Active Modules</div><div class="text-xs text-slate-400 mt-0.5">ERP functional units</div></div><button onclick="event.stopPropagation();openSettingsModal('modules')" class="btn btn-ghost btn-sm mr-2 text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
       <div class="acc-body" id="acc-modules">
         <div class="space-y-2" id="feature-toggles-container">
           <label class="toggle-row" onclick="event.stopPropagation()"><label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="feat-expenses" onclick="event.stopPropagation()"><span class="toggle-track"></span></label><span class="text-sm font-medium text-slate-700">Expense Tracking</span></label>
@@ -788,13 +796,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f5;color:#0f172a
 
     <!-- Keyboard Hotkeys -->
     <div class="acc-card" onclick="toggleAcc('acc-hotkeys',this)">
-      <div class="acc-head"><div class="acc-icon bg-purple-50"><i data-lucide="keyboard" class="w-5 h-5 text-purple-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Keyboard Hotkeys</div><div class="text-xs text-slate-400 mt-0.5">Power-user shortcuts</div></div><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
+      <div class="acc-head"><div class="acc-icon bg-purple-50"><i data-lucide="keyboard" class="w-5 h-5 text-purple-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Keyboard Hotkeys</div><div class="text-xs text-slate-400 mt-0.5">Power-user shortcuts</div></div><button onclick="event.stopPropagation();openSettingsModal('hotkeys')" class="btn btn-ghost btn-sm mr-2 text-purple-600 border-purple-200 bg-purple-50 hover:bg-purple-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
       <div class="acc-body" id="acc-hotkeys"><p class="text-xs text-slate-500 mb-3">Use <strong>Alt + Key</strong> for fast actions.</p><div class="space-y-2" id="shortcuts-toggles-container"></div></div>
     </div>
 
     <!-- Security -->
     <div class="acc-card" onclick="toggleAcc('acc-security',this)">
-      <div class="acc-head"><div class="acc-icon bg-red-50"><i data-lucide="lock" class="w-5 h-5 text-red-500"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Security & PIN</div><div class="text-xs text-slate-400 mt-0.5">Auth and access locks</div></div><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
+      <div class="acc-head"><div class="acc-icon bg-red-50"><i data-lucide="lock" class="w-5 h-5 text-red-500"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Security & PIN</div><div class="text-xs text-slate-400 mt-0.5">Auth and access locks</div></div><button onclick="event.stopPropagation();openSettingsModal('security')" class="btn btn-ghost btn-sm mr-2 text-red-500 border-red-200 bg-red-50 hover:bg-red-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
       <div class="acc-body" id="acc-security">
         <div onclick="event.stopPropagation()" class="space-y-3">
           <label class="toggle-row" onclick="event.stopPropagation();togglePinFields(this.querySelector('input').checked)"><label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="set-pin-enable" onclick="event.stopPropagation();window.togglePinFields&&togglePinFields(this.checked)"><span class="toggle-track"></span></label><span class="text-sm font-semibold text-slate-700">Enable PIN Lock</span></label>
@@ -819,13 +827,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f5;color:#0f172a
 
     <!-- Bank -->
     <div class="acc-card" onclick="toggleAcc('acc-bank',this)">
-      <div class="acc-head"><div class="acc-icon bg-blue-50"><i data-lucide="landmark" class="w-5 h-5 text-blue-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Bank Configuration</div><div class="text-xs text-slate-400 mt-0.5">Payout & UPI</div></div><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
+      <div class="acc-head"><div class="acc-icon bg-blue-50"><i data-lucide="landmark" class="w-5 h-5 text-blue-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Bank Configuration</div><div class="text-xs text-slate-400 mt-0.5">Payout & UPI</div></div><button onclick="event.stopPropagation();openSettingsModal('bank')" class="btn btn-ghost btn-sm mr-2 text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
       <div class="acc-body" id="acc-bank"><div onclick="event.stopPropagation()" class="space-y-3"><div><label class="lbl">Bank Name</label><input type="text" id="set-bank-name" class="inp text-sm" placeholder="State Bank of India"></div><div class="grid grid-cols-2 gap-3"><div><label class="lbl">Account No.</label><input type="text" id="set-bank-acc" class="inp text-sm"></div><div><label class="lbl">IFSC</label><input type="text" id="set-bank-ifsc" class="inp text-sm"></div></div><div><label class="lbl">UPI ID</label><input type="text" id="set-biz-upi" class="inp text-sm" placeholder="example@upi"></div></div></div>
     </div>
 
     <!-- Visual Branding -->
     <div class="acc-card" onclick="toggleAcc('acc-branding',this)">
-      <div class="acc-head"><div class="acc-icon bg-amber-50"><i data-lucide="palette" class="w-5 h-5 text-amber-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Visual Branding</div><div class="text-xs text-slate-400 mt-0.5">Logo, signature & themes</div></div><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
+      <div class="acc-head"><div class="acc-icon bg-amber-50"><i data-lucide="palette" class="w-5 h-5 text-amber-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Visual Branding</div><div class="text-xs text-slate-400 mt-0.5">Logo, signature & themes</div></div><button onclick="event.stopPropagation();openSettingsModal('branding')" class="btn btn-ghost btn-sm mr-2 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
       <div class="acc-body" id="acc-branding"><div onclick="event.stopPropagation()" class="space-y-3">
         <div><label class="lbl">Header Display</label><select id="set-biz-logo-display" class="inp text-sm bg-white"><option value="both">Logo + Name</option><option value="logo">Logo Only</option><option value="name">Name Only</option></select></div>
         <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"><div class="w-12 h-12 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0" id="logo-preview"><i data-lucide="image" class="text-slate-300 w-5 h-5"></i></div><div class="flex-1 min-w-0"><label class="lbl">Logo</label><input type="file" accept="image/*" onchange="window.handleImageUpload&&handleImageUpload(event,'logo')" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700"></div></div>
@@ -836,7 +844,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f5;color:#0f172a
 
     <!-- Invoice & PDF -->
     <div class="acc-card" onclick="toggleAcc('acc-invoice',this)">
-      <div class="acc-head"><div class="acc-icon bg-slate-100"><i data-lucide="file-text" class="w-5 h-5 text-slate-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Invoice & PDF</div><div class="text-xs text-slate-400 mt-0.5">Templates & footer</div></div><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
+      <div class="acc-head"><div class="acc-icon bg-slate-100"><i data-lucide="file-text" class="w-5 h-5 text-slate-600"></i></div><div class="flex-1"><div class="font-bold text-slate-800 text-sm">Invoice & PDF</div><div class="text-xs text-slate-400 mt-0.5">Templates & footer</div></div><button onclick="event.stopPropagation();openSettingsModal('invoice')" class="btn btn-ghost btn-sm mr-2 text-slate-600 border-slate-200 bg-slate-100 hover:bg-slate-200"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><i data-lucide="chevron-down" class="w-4 h-4 acc-chevron"></i></div>
       <div class="acc-body" id="acc-invoice"><div onclick="event.stopPropagation()" class="space-y-3">
         <div><label class="lbl">Footer / T&C</label><textarea id="set-biz-terms" rows="2" class="inp text-sm resize-none" placeholder="Thank you..."></textarea></div>
         <label class="lbl">PDF Template</label>
@@ -962,6 +970,123 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f5;color:#0f172a
     </div>
     <div class="modal-body p-5">
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4" id="tpl-gallery-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+  FORGOT PASSWORD MODAL
+============================================================ -->
+<div id="forgot-pw-modal" class="modal" onclick="if(event.target===this)closeForgotPassword()">
+  <div class="modal-box max-w-sm w-full">
+    <div class="modal-head">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center"><i data-lucide="key" class="w-4 h-4 text-emerald-600"></i></div>
+        <div><div class="font-bold text-slate-800">Reset Password</div><div class="text-xs text-slate-400">Reset link will be sent to your email.</div></div>
+      </div>
+      <button onclick="closeForgotPassword()" class="btn btn-icon btn-ghost"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="forgot-pw-sent" class="hidden text-center py-4">
+        <div class="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="mail-check" class="w-7 h-7 text-emerald-600"></i>
+        </div>
+        <div class="font-bold text-slate-800 mb-1">Email Bhej Diya! ✅</div>
+        <p class="text-slate-500 text-sm">Password reset link aapke email pe bheja gaya hai. Spam folder bhi check karein.</p>
+        <button onclick="closeForgotPassword()" class="btn btn-primary w-full justify-center mt-4">Back to Login</button>
+      </div>
+      <div id="forgot-pw-form">
+        <p class="text-slate-500 text-sm mb-4">Enter your registered email address. Firebase will send you a reset link.</p>
+        <div class="mb-4">
+          <label class="lbl">Email Address</label>
+          <input type="email" id="forgot-pw-email" class="inp" placeholder="you@example.com">
+        </div>
+        <p id="forgot-pw-error" class="text-red-500 text-sm mb-3 hidden"></p>
+      </div>
+    </div>
+    <div class="modal-foot" id="forgot-pw-footer">
+      <button onclick="closeForgotPassword()" class="btn btn-ghost">Cancel</button>
+      <button onclick="handleForgotPassword()" id="forgot-pw-btn" class="btn btn-primary">
+        <i data-lucide="send" class="w-4 h-4"></i> Send Reset Link
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+  FORGOT PIN MODAL (Unlock via Email Password)
+============================================================ -->
+<div id="forgot-pin-modal" class="modal" onclick="if(event.target===this)closeForgotPinModal()">
+  <div class="modal-box max-w-sm w-full">
+    <div class="modal-head">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center"><i data-lucide="shield-off" class="w-4 h-4 text-red-500"></i></div>
+        <div><div class="font-bold text-slate-800">Unlock App</div><div class="text-xs text-slate-400">Email password se verify karein</div></div>
+      </div>
+      <button onclick="closeForgotPinModal()" class="btn btn-icon btn-ghost"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="forgot-pin-success" class="hidden text-center py-4">
+        <div class="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="unlock" class="w-7 h-7 text-emerald-600"></i>
+        </div>
+        <div class="font-bold text-slate-800 mb-1">The app is unlocked! ✅</div>
+        <p class="text-slate-500 text-sm">PIN lock bypassed. You can change or disable the PIN by going to Settings.  </p>
+        <button onclick="closeForgotPinModal();dismissPinLock()" class="btn btn-primary w-full justify-center mt-4"><i data-lucide="unlock" class="w-4 h-4"></i> Open the app  </button>
+      </div>
+      <div id="forgot-pin-form">
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 flex gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+          <p class="text-amber-700 text-xs font-medium">Apna Firebase account ka <strong>Email Password</strong> enter karein jisse aapne ERP mein login kiya tha. PIN bypass ho jayega.</p>
+        </div>
+        <div class="mb-3">
+          <label class="lbl">Email</label>
+          <input type="email" id="forgot-pin-email" class="inp text-sm" placeholder="aapka@email.com">
+        </div>
+        <div class="mb-3">
+          <label class="lbl">Account Password</label>
+          <div class="relative">
+            <input type="password" id="forgot-pin-password" class="inp text-sm pr-11" placeholder="••••••••">
+            <button type="button" class="eye-btn absolute right-3 top-1/2 -translate-y-1/2" onclick="toggleEye('forgot-pin-password',this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+        <p id="forgot-pin-error" class="text-red-500 text-sm mb-2 hidden"></p>
+      </div>
+    </div>
+    <div class="modal-foot" id="forgot-pin-footer">
+      <button onclick="closeForgotPinModal()" class="btn btn-ghost">Cancel</button>
+      <button onclick="handleForgotPin()" id="forgot-pin-btn" class="btn btn-primary">
+        <i data-lucide="shield-check" class="w-4 h-4"></i> Verify & Unlock
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+  SETTINGS EDIT MODAL (Gallery Style)
+============================================================ -->
+<div id="settings-edit-modal" class="modal" onclick="if(event.target===this)closeSettingsModal()">
+  <div class="modal-box max-w-2xl w-full">
+    <div class="modal-head">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center" id="set-modal-icon-wrap">
+          <i data-lucide="settings" class="w-4 h-4" id="set-modal-icon"></i>
+        </div>
+        <div>
+          <div class="font-bold text-slate-800" id="set-modal-title">Settings</div>
+          <div class="text-xs text-slate-400" id="set-modal-subtitle">Configure</div>
+        </div>
+      </div>
+      <button onclick="closeSettingsModal()" class="btn btn-icon btn-ghost"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="modal-body" id="set-modal-body">
+      <!-- Dynamic content injected by JS -->
+    </div>
+    <div class="modal-foot">
+      <button onclick="closeSettingsModal()" class="btn btn-ghost">Cancel</button>
+      <button onclick="saveSettingsFromModal()" class="btn btn-primary">
+        <i data-lucide="save" class="w-4 h-4"></i> Save Changes
+      </button>
     </div>
   </div>
 </div>
@@ -1923,7 +2048,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithCustomToken, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const defaultAppId = 'dev-ayurveda-pro-auth';
@@ -1939,6 +2064,11 @@ document.addEventListener('DOMContentLoaded', function() {
             app = initializeApp(firebaseConfig); 
             auth = getAuth(app); 
             db = getFirestore(app);
+            // Expose auth globally for Forgot Password & Forgot PIN features
+            window._auth = auth;
+            // Expose Firebase auth functions globally for non-module scripts
+            window._sendPasswordResetEmail = (email) => sendPasswordResetEmail(auth, email);
+            window._signInWithEmailAndPassword = (email, pw) => signInWithEmailAndPassword(auth, email, pw);
         } catch(e) {
             console.error("Firebase Init Error:", e);
         }
@@ -4140,6 +4270,353 @@ function filterTemplates(cat) {
     // Re-render gallery with filter
     if(window._renderTplGallery) window._renderTplGallery();
 }
+</script>
+
+<script>
+// ================================================================
+// FORGOT PASSWORD — Firebase sendPasswordResetEmail
+// ================================================================
+window.showForgotPassword = function() {
+    var modal = document.getElementById('forgot-pw-modal');
+    var form = document.getElementById('forgot-pw-form');
+    var sent = document.getElementById('forgot-pw-sent');
+    var footer = document.getElementById('forgot-pw-footer');
+    var err = document.getElementById('forgot-pw-error');
+    var emailEl = document.getElementById('forgot-pw-email');
+
+    // Pre-fill email from login form if available
+    var loginEmail = document.getElementById('login-email');
+    if(loginEmail && loginEmail.value) {
+        if(emailEl) emailEl.value = loginEmail.value;
+    }
+
+    if(form) form.classList.remove('hidden');
+    if(sent) sent.classList.add('hidden');
+    if(footer) footer.classList.remove('hidden');
+    if(err) { err.classList.add('hidden'); err.textContent = ''; }
+
+    if(modal) modal.classList.add('open');
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+    setTimeout(function(){ if(emailEl) emailEl.focus(); }, 200);
+};
+
+window.closeForgotPassword = function() {
+    var modal = document.getElementById('forgot-pw-modal');
+    if(modal) modal.classList.remove('open');
+};
+
+window.handleForgotPassword = async function() {
+    var emailEl = document.getElementById('forgot-pw-email');
+    var errEl = document.getElementById('forgot-pw-error');
+    var btn = document.getElementById('forgot-pw-btn');
+
+    var email = emailEl ? emailEl.value.trim() : '';
+    if(!email) {
+        if(errEl) { errEl.textContent = 'Email address required hai.'; errEl.classList.remove('hidden'); }
+        return;
+    }
+
+    // Validate basic email format
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if(errEl) { errEl.textContent = 'Valid email address enter karein.'; errEl.classList.remove('hidden'); }
+        return;
+    }
+
+    if(errEl) errEl.classList.add('hidden');
+    if(btn) { btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Bhej raha hoon...'; btn.disabled = true; if(typeof lucide !== 'undefined') lucide.createIcons(); }
+
+    try {
+        // Use Firebase wrapper exposed from module scope
+        if(window._sendPasswordResetEmail) {
+            await window._sendPasswordResetEmail(email);
+        } else if(typeof sendPasswordResetEmail === 'function' && window._auth) {
+            await sendPasswordResetEmail(window._auth, email);
+        } else {
+            throw new Error('Auth not initialized. App reload karein.');
+        }
+
+        // Success — show confirmation
+        var form = document.getElementById('forgot-pw-form');
+        var sent = document.getElementById('forgot-pw-sent');
+        var footer = document.getElementById('forgot-pw-footer');
+        if(form) form.classList.add('hidden');
+        if(sent) sent.classList.remove('hidden');
+        if(footer) footer.classList.add('hidden');
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+    } catch(err) {
+        var msg = 'Error: ' + (err.message || 'Try again');
+        if(err.code === 'auth/user-not-found') msg = 'Yeh email registered nahi hai.';
+        if(err.code === 'auth/invalid-email') msg = 'Invalid email format.';
+        if(err.code === 'auth/too-many-requests') msg = 'Bahut zyada attempts. Thodi der baad try karein.';
+        if(errEl) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+    } finally {
+        if(btn) { btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Reset Link'; btn.disabled = false; if(typeof lucide !== 'undefined') lucide.createIcons(); }
+    }
+};
+
+// Expose Firebase auth ref after init (patched in main script block)
+document.addEventListener('DOMContentLoaded', function() {
+    // Patch: capture auth reference once Firebase loads
+    var _checkAuth = setInterval(function() {
+        if(window._db && window.firebase === undefined) {
+            // Modular SDK — auth already in scope via import
+            clearInterval(_checkAuth);
+        }
+    }, 500);
+});
+
+
+// ================================================================
+// FORGOT PIN — Re-authenticate via Email Password → Bypass PIN
+// ================================================================
+window.showForgotPinModal = function() {
+    var modal = document.getElementById('forgot-pin-modal');
+    var form = document.getElementById('forgot-pin-form');
+    var success = document.getElementById('forgot-pin-success');
+    var footer = document.getElementById('forgot-pin-footer');
+    var errEl = document.getElementById('forgot-pin-error');
+    var emailEl = document.getElementById('forgot-pin-email');
+
+    // Pre-fill with logged-in user email
+    if(window.AppState && window.AppState.user && window.AppState.user.email) {
+        if(emailEl) emailEl.value = window.AppState.user.email;
+    }
+
+    if(form) form.classList.remove('hidden');
+    if(success) success.classList.add('hidden');
+    if(footer) footer.classList.remove('hidden');
+    if(errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+
+    var pwEl = document.getElementById('forgot-pin-password');
+    if(pwEl) pwEl.value = '';
+
+    if(modal) modal.classList.add('open');
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+    setTimeout(function(){ if(pwEl) pwEl.focus(); }, 200);
+};
+
+window.closeForgotPinModal = function() {
+    var modal = document.getElementById('forgot-pin-modal');
+    if(modal) modal.classList.remove('open');
+};
+
+window.dismissPinLock = function() {
+    var pinLock = document.getElementById('pin-lock');
+    if(pinLock) {
+        pinLock.classList.add('hidden');
+        pinLock.style.display = '';
+    }
+    sessionStorage.setItem('ayur_unlocked', '1');
+    if(window.showToast) window.showToast('The app is unlocked! ✅');
+};
+
+window.handleForgotPin = async function() {
+    var emailEl = document.getElementById('forgot-pin-email');
+    var pwEl = document.getElementById('forgot-pin-password');
+    var errEl = document.getElementById('forgot-pin-error');
+    var btn = document.getElementById('forgot-pin-btn');
+
+    var email = emailEl ? emailEl.value.trim() : '';
+    var password = pwEl ? pwEl.value : '';
+
+    if(!email || !password) {
+        if(errEl) { errEl.textContent = 'Email and password are both required.'; errEl.classList.remove('hidden'); }
+        return;
+    }
+
+    if(errEl) errEl.classList.add('hidden');
+    if(btn) { btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Verify ho raha hai...'; btn.disabled = true; if(typeof lucide !== 'undefined') lucide.createIcons(); }
+
+    try {
+        // Re-authenticate using Firebase wrapper
+        if(window._signInWithEmailAndPassword) {
+            await window._signInWithEmailAndPassword(email, password);
+        } else if(typeof signInWithEmailAndPassword === 'function' && window._auth) {
+            await signInWithEmailAndPassword(window._auth, email, password);
+        } else {
+            throw new Error('Auth not available. App reload karein.');
+        }
+
+        // Auth success — PIN bypass granted
+        var form = document.getElementById('forgot-pin-form');
+        var success = document.getElementById('forgot-pin-success');
+        var footer = document.getElementById('forgot-pin-footer');
+        if(form) form.classList.add('hidden');
+        if(success) success.classList.remove('hidden');
+        if(footer) footer.classList.add('hidden');
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+    } catch(err) {
+        var msg = 'Galat credentials. Dobara try karein.';
+        if(err.code === 'auth/wrong-password') msg = 'Galat password. Dobara try karein.';
+        if(err.code === 'auth/user-not-found') msg = 'Yeh email registered nahi hai.';
+        if(err.code === 'auth/invalid-email') msg = 'Invalid email format.';
+        if(err.code === 'auth/too-many-requests') msg = 'Bahut zyada attempts. Thodi der baad try karein.';
+        if(err.code === 'auth/invalid-credential') msg = 'Email ya password galat hai.';
+        if(errEl) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+    } finally {
+        if(btn) { btn.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4"></i> Verify & Unlock'; btn.disabled = false; if(typeof lucide !== 'undefined') lucide.createIcons(); }
+    }
+};
+
+// Patch: expose _auth reference from Firebase init
+(function() {
+    var _patch = setInterval(function() {
+        // Try to get auth from firebase module scope
+        if(window._firebaseAuthRef) {
+            window._auth = window._firebaseAuthRef;
+            clearInterval(_patch);
+        }
+    }, 300);
+    setTimeout(function(){ clearInterval(_patch); }, 10000);
+})();
+
+
+// ================================================================
+// SETTINGS EDIT MODAL — Gallery Style
+// ================================================================
+var _settingsModalSection = null;
+
+var SETTINGS_MODAL_CONFIG = {
+    modules: {
+        title: 'Active Modules',
+        subtitle: 'ERP functional units toggle karein',
+        iconBg: 'bg-emerald-50',
+        iconColor: 'text-emerald-600',
+        icon: 'layout-grid'
+    },
+    hotkeys: {
+        title: 'Keyboard Hotkeys',
+        subtitle: 'Power-user shortcuts configure karein',
+        iconBg: 'bg-purple-50',
+        iconColor: 'text-purple-600',
+        icon: 'keyboard'
+    },
+    security: {
+        title: 'Security & PIN',
+        subtitle: 'Auth and access lock settings',
+        iconBg: 'bg-red-50',
+        iconColor: 'text-red-500',
+        icon: 'lock'
+    },
+    bank: {
+        title: 'Bank Configuration',
+        subtitle: 'Payout & UPI details',
+        iconBg: 'bg-blue-50',
+        iconColor: 'text-blue-600',
+        icon: 'landmark'
+    },
+    branding: {
+        title: 'Visual Branding',
+        subtitle: 'Logo, signature & theme',
+        iconBg: 'bg-amber-50',
+        iconColor: 'text-amber-600',
+        icon: 'palette'
+    },
+    invoice: {
+        title: 'Invoice & PDF',
+        subtitle: 'Templates & footer text',
+        iconBg: 'bg-slate-100',
+        iconColor: 'text-slate-600',
+        icon: 'file-text'
+    }
+};
+
+window.openSettingsModal = function(section) {
+    _settingsModalSection = section;
+    var cfg = SETTINGS_MODAL_CONFIG[section];
+    if(!cfg) return;
+
+    // Set header
+    var titleEl = document.getElementById('set-modal-title');
+    var subEl = document.getElementById('set-modal-subtitle');
+    var iconWrap = document.getElementById('set-modal-icon-wrap');
+    var iconEl = document.getElementById('set-modal-icon');
+
+    if(titleEl) titleEl.textContent = cfg.title;
+    if(subEl) subEl.textContent = cfg.subtitle;
+    if(iconWrap) iconWrap.className = 'w-9 h-9 rounded-xl flex items-center justify-center ' + cfg.iconBg;
+    if(iconEl) { iconEl.setAttribute('data-lucide', cfg.icon); iconEl.className = 'w-4 h-4 ' + cfg.iconColor; }
+
+    // Render body content from existing accordion content
+    var bodyEl = document.getElementById('set-modal-body');
+    if(bodyEl) {
+        var accBody = document.getElementById('acc-' + section);
+        if(accBody) {
+            // Clone the content
+            var clone = accBody.cloneNode(true);
+            clone.className = '';
+            clone.style = '';
+            // Make cloned IDs unique to avoid conflicts — use modal- prefix
+            clone.querySelectorAll('[id]').forEach(function(el) {
+                el.id = 'modal-' + el.id;
+            });
+            clone.querySelectorAll('[for]').forEach(function(el) {
+                el.setAttribute('for', 'modal-' + el.getAttribute('for'));
+            });
+            clone.querySelectorAll('[onclick]').forEach(function(el) {
+                var oc = el.getAttribute('onclick');
+                // Fix stopPropagation calls (not needed in modal)
+                el.setAttribute('onclick', oc.replace(/event\.stopPropagation\(\);?/g, ''));
+            });
+            bodyEl.innerHTML = '';
+            bodyEl.appendChild(clone);
+        } else {
+            bodyEl.innerHTML = '<p class="text-slate-400 text-sm text-center py-6">Content not found</p>';
+        }
+    }
+
+    var modal = document.getElementById('settings-edit-modal');
+    if(modal) modal.classList.add('open');
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+window.closeSettingsModal = function() {
+    var modal = document.getElementById('settings-edit-modal');
+    if(modal) modal.classList.remove('open');
+    _settingsModalSection = null;
+};
+
+window.saveSettingsFromModal = function() {
+    // Sync modal values back to original accordion inputs
+    if(!_settingsModalSection) { closeSettingsModal(); return; }
+
+    var accBody = document.getElementById('acc-' + _settingsModalSection);
+    var modalBody = document.getElementById('set-modal-body');
+    if(!accBody || !modalBody) { closeSettingsModal(); return; }
+
+    // Sync all inputs, selects, textareas, checkboxes
+    var origInputs = accBody.querySelectorAll('input, select, textarea');
+    origInputs.forEach(function(orig) {
+        if(!orig.id) return;
+        var modalEl = document.getElementById('modal-' + orig.id);
+        if(!modalEl) return;
+        if(orig.type === 'checkbox' || orig.type === 'radio') {
+            orig.checked = modalEl.checked;
+            // Trigger change event so existing listeners fire
+            orig.dispatchEvent(new Event('change', { bubbles: true }));
+        } else if(orig.type === 'file') {
+            // Files can't be synced programmatically — skip
+        } else {
+            orig.value = modalEl.value;
+            orig.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
+
+    closeSettingsModal();
+
+    // Auto-save settings
+    if(window.saveSettings) {
+        window.saveSettings();
+    } else {
+        if(window.showToast) window.showToast('Changes saved! ✅');
+    }
+};
+
+// showLogin / showSignup helpers (used in auth screen)
+window.showLogin = function() { window.toggleAuthMode && window.toggleAuthMode('login'); };
+window.showSignup = function() { window.toggleAuthMode && window.toggleAuthMode('signup'); };
 </script>
 </body>
 </html>
